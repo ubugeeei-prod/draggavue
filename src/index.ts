@@ -1,3 +1,9 @@
+export { announce } from "./a11y/announcer";
+export type { DragIntent, KeyboardSteps } from "./a11y/keyboard";
+export { DEFAULT_STEPS, intentFromKey } from "./a11y/keyboard";
+export type { DragA11yMessages } from "./a11y/messages";
+export { DEFAULT_MESSAGES, describePosition } from "./a11y/messages";
+export type { BoundsOption, ConstraintOptions } from "./draggable/constraints";
 export type {
   DragBounds,
   DragConstraints,
@@ -21,8 +27,8 @@ export {
   release,
   resolveDelta,
 } from "./draggable/drag";
+export type { DragA11yOptions, DraggableAttrs } from "./draggable/dragA11y";
 export type {
-  BoundsOption,
   DraggableCallbacks,
   DraggableStyle,
   UseDraggableOptions,
