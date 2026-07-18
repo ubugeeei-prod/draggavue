@@ -5,19 +5,83 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+
 jobs:
-  ci:
+  fmt:
+    name: fmt
     runs-on: blacksmith-32vcpu-ubuntu-2404
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: useblacksmith/setup-node@v5
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm exec vp run check
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run check:fmt
+
+  oxlint:
+    name: oxlint
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run check:oxlint
+
+  vize-lint:
+    name: vize-lint
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - run: pnpm exec vp run lint
-      - run: pnpm exec vp run test
+
+  typecheck:
+    name: typecheck
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run typecheck
+
+  unit:
+    name: unit
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run test:unit
+
+  browser:
+    name: browser
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec vp run test:browser
+
+  build:
+    name: build
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
       - run: pnpm exec vp run build
+
+  automerge:
+    name: automerge
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    needs: [fmt, oxlint, vize-lint, typecheck, unit, browser, build]
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr merge --squash --repo "$GITHUB_REPOSITORY" "${{ github.event.pull_request.number }}"

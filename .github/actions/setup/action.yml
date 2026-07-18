@@ -1,0 +1,13 @@
+name: Setup toolchain
+description: pnpm + Node with Blacksmith-backed caching, then install.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v4
+    - uses: useblacksmith/setup-node@v5
+      with:
+        node-version: 24
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash
