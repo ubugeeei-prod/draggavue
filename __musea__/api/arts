@@ -1,6 +1,6 @@
 [
   {
-    "path": "/Users/ubugeeei/Source/github.com/ubugeeei-prod/draggavue/stories/Draggable.art.vue",
+    "path": "/home/runner/_work/draggavue/draggavue/stories/Draggable.art.vue",
     "metadata": {
       "title": "Draggable",
       "component": "../src/draggable/Draggable.vue",
@@ -67,7 +67,7 @@
     "isInline": false
   },
   {
-    "path": "/Users/ubugeeei/Source/github.com/ubugeeei-prod/draggavue/stories/SortableList.art.vue",
+    "path": "/home/runner/_work/draggavue/draggavue/stories/SortableList.art.vue",
     "metadata": {
       "title": "SortableList",
       "component": "../src/sortable/SortableList.vue",
