@@ -4,6 +4,7 @@ import type { DraggableElement, ElementTarget } from "../shared/dom";
 import { pointFromEvent, restoreUserSelect, suppressUserSelect } from "../shared/dom";
 import type { Position } from "../shared/geometry";
 import { ORIGIN, translate } from "../shared/geometry";
+import { createPointerSession } from "../shared/pointerSession";
 import { px } from "../shared/units";
 import type { ConstraintOptions } from "./constraints";
 import { FREE_CONSTRAINTS, resolveConstraints } from "./constraints";
@@ -99,11 +100,23 @@ export function useDraggable(
 
   // Session-scoped plumbing; none of it needs reactivity.
   let constraints: DragConstraints = FREE_CONSTRAINTS;
-  let session: AbortController | null = null;
-  let frame: number | null = null;
-  let latestPoint: Position | null = null;
-  let latestPointerId = -1;
   let selectionSuppressed = false;
+
+  const pointerSession = createPointerSession({
+    onMove: (point, pointerId) => {
+      if (isDisabled()) {
+        cancelSession();
+        return;
+      }
+      applyTransition(movePointer(state.value, pointerId, point, constraints));
+    },
+    onUp: (pointerId) => {
+      applyTransition(release(state.value, pointerId));
+    },
+    onCancel: () => {
+      cancelSession();
+    },
+  });
 
   function isDisabled(): boolean {
     return toValue(options.disabled) ?? false;
@@ -139,72 +152,21 @@ export function useDraggable(
     if (isDisabled() || event.button !== 0) return;
     if (state.value.status !== "idle") return;
     constraints = resolveConstraints(target, options, settled.value);
-    beginSession();
+    pointerSession.begin();
     applyTransition(
       press(state.value, event.pointerId, settled.value, pointFromEvent(event), constraints),
     );
   }
 
-  function onPointerMove(event: PointerEvent): void {
-    if (isDisabled()) {
-      cancelSession();
-      return;
-    }
-    latestPoint = pointFromEvent(event);
-    latestPointerId = event.pointerId;
-    // Coalesce to at most one state update per frame regardless of
-    // the browser's pointermove cadence.
-    frame ??= requestAnimationFrame(flushMove);
-  }
-
-  function flushMove(): void {
-    frame = null;
-    if (latestPoint === null) return;
-    applyTransition(movePointer(state.value, latestPointerId, latestPoint, constraints));
-  }
-
-  function onPointerUp(event: PointerEvent): void {
-    stopFrame();
-    flushMove();
-    applyTransition(release(state.value, event.pointerId));
-  }
-
-  function onSessionKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    cancelSession();
-  }
-
-  function beginSession(): void {
-    session?.abort();
-    session = new AbortController();
-    const { signal } = session;
-    window.addEventListener("pointermove", onPointerMove, { signal, passive: true });
-    window.addEventListener("pointerup", onPointerUp, { signal });
-    window.addEventListener("pointercancel", cancelSession, { signal });
-    window.addEventListener("blur", cancelSession, { signal });
-    window.addEventListener("keydown", onSessionKeydown, { signal });
-  }
-
   function endSession(): void {
-    session?.abort();
-    session = null;
-    stopFrame();
-    latestPoint = null;
+    pointerSession.end();
     if (selectionSuppressed) {
       restoreUserSelect();
       selectionSuppressed = false;
     }
   }
 
-  function stopFrame(): void {
-    if (frame === null) return;
-    cancelAnimationFrame(frame);
-    frame = null;
-  }
-
   function cancelSession(): void {
-    stopFrame();
     applyTransition(cancelDrag(state.value));
     // A pending press cancels silently (`effect: none`) — make sure
     // its listeners are gone too.
