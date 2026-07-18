@@ -22,6 +22,7 @@
   "include": [
     "src",
     "playground/src",
+    "stories",
     "types/css.d.ts",
     "vite.config.ts",
     "vite.config.playground.ts"
