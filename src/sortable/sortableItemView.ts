@@ -4,6 +4,19 @@ import type { ActiveSort } from "./useSortable.def";
 
 // --- Types & Signatures ---
 
+/**
+ * Inline style for one list item, computed per render.
+ *
+ * Three shapes, depending on the item's role in the session:
+ *
+ * - **resting, no session** — just `touch-action: none`
+ * - **the dragged item** — live `transform`, `transition: none`
+ *   (it must track the input exactly), `will-change`, and a raised
+ *   `z-index`
+ * - **a shifted neighbor** — a `transform` moving it out of the
+ *   way, plus the configured transition (unless reduced motion is
+ *   requested)
+ */
 export type SortableItemStyle = {
   /** Items own their gesture, so browsers must not claim it for scrolling. */
   readonly touchAction: "none";
@@ -14,6 +27,15 @@ export type SortableItemStyle = {
   readonly position?: "relative";
 };
 
+/**
+ * Attributes for one list item.
+ *
+ * `data-draggavue-index` is load-bearing: the container's delegated
+ * listeners use it to resolve which item an event belongs to, and
+ * the session snapshot uses it to measure geometry in source order.
+ * The ARIA affordances appear only while keyboard reordering is
+ * enabled.
+ */
 export type SortableItemAttrs = {
   /** Delegation key: how events find their item. */
   readonly "data-draggavue-index": number;
@@ -24,6 +46,7 @@ export type SortableItemAttrs = {
   readonly "aria-describedby"?: string;
 };
 
+/** The a11y context {@link sortableItemAttrs} renders from. */
 export type SortableItemA11y = {
   readonly keyboardEnabled: boolean;
   readonly roleDescription: string;

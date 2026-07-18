@@ -1,3 +1,47 @@
+/**
+ * draggavue — lightweight, type-safe, accessible drag & drop
+ * primitives for Vue.js.
+ *
+ * The library is layered, and every layer is public:
+ *
+ * - **Composables** — {@link useDraggable} for free dragging,
+ *   {@link useSortable} for list reordering. Headless, reactive,
+ *   accessible by default.
+ * - **Components** — {@link Draggable} and {@link SortableList},
+ *   thin fully-typed wrappers over the composables for the common
+ *   cases.
+ * - **Pure core** — the geometry toolkit ({@link translate},
+ *   {@link snapToGrid}, …), the drag state machine ({@link press},
+ *   {@link movePointer}, …), and the reorder math
+ *   ({@link reorder}, {@link targetIndexOf}, …). Framework-free and
+ *   fully unit-tested; build your own abstractions on top of the
+ *   same primitives the composables use.
+ * - **A11y toolkit** — message catalogs ({@link DEFAULT_MESSAGES},
+ *   {@link DEFAULT_SORT_MESSAGES}), the keyboard grammar
+ *   ({@link intentFromKey}), and the shared live region
+ *   ({@link announce}).
+ *
+ * Everything is documented where it is declared — hover any export
+ * for its specification, defaults, and examples.
+ *
+ * @example Install and drag in three lines
+ * ```vue
+ * <script setup lang="ts">
+ * import { useTemplateRef } from "vue";
+ * import { useDraggable } from "draggavue";
+ *
+ * const box = useTemplateRef<HTMLElement>("box");
+ * const drag = useDraggable(box);
+ * </script>
+ *
+ * <template>
+ *   <div ref="box" v-bind="drag.attrs.value" :style="drag.style.value" />
+ * </template>
+ * ```
+ *
+ * @packageDocumentation
+ */
+
 export { announce } from "./a11y/announcer";
 export type { DragIntent, KeyboardSteps } from "./a11y/keyboard";
 export { DEFAULT_STEPS, intentFromKey } from "./a11y/keyboard";

@@ -62,5 +62,49 @@ export interface SortableListComponent {
 
 // --- Implementation ---
 
+/**
+ * Sortable list component — {@link useSortable} with the rendering
+ * already wired.
+ *
+ * Fully generic: slot props carry *your* item type, inferred from
+ * `items`. The list is controlled — bind `items` and apply updates
+ * from `@update:items`; the component never mutates your array.
+ *
+ * `item-key` is required and must be stable per item. Index keys
+ * would fight the reorder animation and break keyboard focus.
+ *
+ * @example
+ * ```vue
+ * <script setup lang="ts">
+ * import { ref } from "vue";
+ * import { SortableList } from "draggavue";
+ *
+ * type Track = { id: number; title: string };
+ *
+ * const tracks = ref<readonly Track[]>([
+ *   { id: 1, title: "Overture" },
+ *   { id: 2, title: "Interlude" },
+ * ]);
+ *
+ * const trackKey = (track: Track): number => track.id;
+ * </script>
+ *
+ * <template>
+ *   <SortableList
+ *     :items="tracks"
+ *     :item-key="trackKey"
+ *     @update:items="(next) => (tracks = next)"
+ *   >
+ *     <template #item="{ item, index, isDragging }">
+ *       <span>{{ index + 1 }}. {{ item.title }}</span>
+ *       <em v-if="isDragging">moving…</em>
+ *     </template>
+ *   </SortableList>
+ * </template>
+ * ```
+ *
+ * @see {@link useSortable} when you need full control over the
+ * markup.
+ */
 export const SortableList: SortableListComponent =
   SortableListImpl as unknown as SortableListComponent;

@@ -25,56 +25,161 @@ import { useDragA11y } from "./dragA11y";
 // --- Types & Signatures ---
 
 export interface DraggableCallbacks {
+  /**
+   * Fired once when a session activates: a pointer press that
+   * traveled past {@link ConstraintOptions.activationDistance}, or a
+   * keyboard grab.
+   */
   onDragStart?: ((session: Dragging) => void) | undefined;
+  /**
+   * Fired while the element moves — at most once per animation
+   * frame for pointers, once per step for keyboard moves.
+   */
   onDragMove?: ((session: Dragging) => void) | undefined;
+  /** Fired when the session commits, with the settled position. */
   onDragEnd?: ((position: Position) => void) | undefined;
+  /**
+   * Fired when the session cancels (Escape, `pointercancel`, window
+   * blur, focus loss, `disabled` flipping on, or `cancel()`), with
+   * the restored position.
+   */
   onDragCancel?: ((position: Position) => void) | undefined;
 }
 
 export interface UseDraggableOptions
   extends ConstraintOptions, DragA11yOptions, DraggableCallbacks {
-  /** Settled position at rest. Defaults to `{ x: 0, y: 0 }`. */
+  /**
+   * Settled position at rest.
+   *
+   * @default ORIGIN ({ x: 0, y: 0 })
+   */
   initialPosition?: Position | undefined;
   /**
-   * Own the position from outside (controlled mode). Committed
-   * positions are written back into this ref.
+   * Own the position from outside (controlled mode). The composable
+   * reads the settled position from this ref and writes committed
+   * positions back into it — hand it a ref you own to persist,
+   * synchronize, or drive the position externally.
+   *
+   * @default undefined (an internal ref is created)
+   * @example
+   * ```ts
+   * const saved = shallowRef<Position>(restoreFromStorage());
+   * useDraggable(box, { position: saved });
+   * watch(saved, persistToStorage);
+   * ```
    */
   position?: Ref<Position> | undefined;
-  /** Drag handle. Defaults to the target element itself. */
+  /**
+   * Drag handle: only presses on this element start a session.
+   * Keyboard focus and ARIA attributes move to the handle too.
+   *
+   * @default undefined (the target element is its own handle)
+   */
   handle?: ElementTarget | undefined;
-  /** Reactively disable dragging. An active session is canceled. */
+  /**
+   * Reactively disable dragging. Turning this on mid-session
+   * cancels the session and restores the origin.
+   *
+   * @default false
+   */
   disabled?: MaybeRefOrGetter<boolean | undefined>;
 }
 
+/**
+ * Inline style for the target element: a `translate3d` transform
+ * (never `left`/`top`, so moving costs no layout), plus
+ * `will-change` only while a session is live to keep the layer
+ * budget honest at rest.
+ */
 export type DraggableStyle = {
   readonly transform: string;
   readonly willChange?: "transform";
 };
 
 export interface UseDraggableReturn {
-  /** Live position: follows the input per frame, settles on release. */
+  /**
+   * Live position: follows the input per frame while dragging and
+   * settles to the committed value on release.
+   */
   position: ComputedRef<Position>;
-  /** Read-only view of the drag session state. */
+  /**
+   * Read-only view of the session state machine — pattern-match on
+   * `status` (and `source` while dragging) for advanced rendering.
+   */
   state: ComputedRef<DragState>;
   isDragging: ComputedRef<boolean>;
   /** Bind to `:style` of the target element. */
   style: ComputedRef<DraggableStyle>;
-  /** Spread onto the handle: ARIA attributes + `data-dragging`. */
+  /**
+   * Spread onto the handle element (`v-bind="drag.attrs.value"`):
+   * WAI-ARIA attributes, keyboard affordances, and the
+   * `data-dragging` / `data-draggavue` styling hooks.
+   */
   attrs: ComputedRef<DraggableAttrs>;
-  /** Overwrite the settled position. */
+  /**
+   * Overwrite the settled position, e.g. to restore a persisted
+   * layout. Ignored by an in-flight session until it settles.
+   */
   setPosition: (next: Position) => void;
-  /** Restore the initial position. */
+  /** Restore {@link UseDraggableOptions.initialPosition}. */
   reset: () => void;
-  /** Programmatically cancel the active session. */
+  /** Cancel the active session and restore the origin. */
   cancel: () => void;
 }
 
 /**
  * Headless, accessible drag behavior for a single element.
  *
- * The composable wires DOM events (pointer + keyboard) and applies
- * transition effects; every movement decision lives in the pure
- * state machine (`drag.ts`).
+ * Pointer and keyboard input drive the same pure state machine, so
+ * every constraint (axis, grid, bounds, activation distance)
+ * behaves identically for both. Accessibility is on by default:
+ * WAI-ARIA attributes via {@link UseDraggableReturn.attrs}, the
+ * space/arrows/escape keyboard grammar, and live-region
+ * announcements (replace or disable them with
+ * {@link DragA11yOptions.a11y}).
+ *
+ * Performance notes: rendering is `transform`-only (no layout),
+ * pointer moves collapse to one state update per animation frame,
+ * geometry is measured once per session, and window listeners exist
+ * only while a session is live. SSR-safe — the DOM is never touched
+ * until an interaction starts.
+ *
+ * @param target - Element to move: a `useTemplateRef()` result, any
+ * ref/getter, or a raw element.
+ * @param options - Constraints, a11y, keyboard tuning, callbacks,
+ * and control mode. Reactive options accept refs or getters and are
+ * snapshotted at session start.
+ * @returns Reactive session state plus imperative controls — see
+ * {@link UseDraggableReturn}.
+ *
+ * @example Minimal
+ * ```vue
+ * <script setup lang="ts">
+ * import { useTemplateRef } from "vue";
+ * import { useDraggable } from "draggavue";
+ *
+ * const box = useTemplateRef<HTMLElement>("box");
+ * const drag = useDraggable(box);
+ * </script>
+ *
+ * <template>
+ *   <div ref="box" v-bind="drag.attrs.value" :style="drag.style.value">Drag me</div>
+ * </template>
+ * ```
+ *
+ * @example Constrained, with a handle
+ * ```ts
+ * const card = useTemplateRef<HTMLElement>("card");
+ * const grip = useTemplateRef<HTMLElement>("grip");
+ * const drag = useDraggable(card, {
+ *   handle: grip,
+ *   axis: "x",
+ *   grid: [px(8), px(8)],
+ *   bounds: "parent",
+ *   activationDistance: 4,
+ *   onDragEnd: (position) => save(position),
+ * });
+ * ```
  */
 export function useDraggable(
   target: ElementTarget,
