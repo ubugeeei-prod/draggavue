@@ -1,6 +1,9 @@
 import { defineConfig } from "vize";
 
 export default defineConfig({
+  musea: {
+    include: ["./stories/**/*.art.vue"],
+  },
   linter: {
     preset: "happy-path",
     typeAware: true,
