@@ -1,0 +1,35 @@
+name: Preview Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+# Shares the gh-pages lock with the deploys in ci.yml.
+concurrency:
+  group: musea-pages
+
+jobs:
+  cleanup:
+    name: cleanup
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove this PR's preview
+        env:
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ ! -d "pr-$PR" ]; then
+            echo "no preview for pr-$PR — nothing to do"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -rq "pr-$PR"
+          git commit -m "preview: remove pr-$PR"
+          git push || { git pull --rebase && git push; }
