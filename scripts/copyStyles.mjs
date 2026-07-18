@@ -1,16 +1,31 @@
 #!/usr/bin/env node
-// Copy the distributable stylesheets into dist/styles.
+// Minify the distributable stylesheets into dist/styles.
 //
-// A plain Node script instead of `cp src/styles/*.css` because Vite
-// Task spawns commands without a shell — no glob expansion, no `&&`.
+// The sources keep their documentation headers; consumers get the
+// bytes. The minifier is a few regexes — safe here because these
+// are our own three stylesheets with no strings or url() payloads —
+// which keeps the build free of extra dependencies.
+//
+// A plain Node script because Vite Task spawns commands without a
+// shell (no globs, no `&&`).
 
-import { cpSync, mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+
+const minify = (css) =>
+  css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\s+/g, " ")
+    .replace(/ ?([{}:;,>]) ?/g, "$1")
+    .replace(/;}/g, "}")
+    .trim();
 
 mkdirSync("dist/styles", { recursive: true });
 
-cpSync("src/styles", "dist/styles", {
-  recursive: true,
-  // Only the stylesheets themselves — tests and screenshot
-  // directories live alongside them in src/styles.
-  filter: (source) => source.endsWith("styles") || source.endsWith(".css"),
-});
+const sources = readdirSync("src/styles").filter((file) => file.endsWith(".css"));
+
+for (const file of sources) {
+  const source = readFileSync(`src/styles/${file}`, "utf8");
+  writeFileSync(`dist/styles/${file}`, `${minify(source)}\n`);
+}
+
+console.log(`styles: minified ${sources.length} stylesheets into dist/styles`);
