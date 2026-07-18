@@ -37,6 +37,15 @@ export type {
 } from "./draggable/useDraggable";
 export { useDraggable } from "./draggable/useDraggable";
 export type { DraggableElement, ElementTarget } from "./shared/dom";
+export type { Orientation, SortableLayout } from "./sortable/sortable";
+export {
+  indexStepOf,
+  layoutFromRects,
+  mainAxisOffset,
+  reorder,
+  shiftFor,
+  targetIndexOf,
+} from "./sortable/sortable";
 export type { Axis, Delta, Grid, Position, Rect, Size } from "./shared/geometry";
 export {
   ORIGIN,
