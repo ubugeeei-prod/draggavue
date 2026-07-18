@@ -1,0 +1,54 @@
+{
+  "name": "draggavue",
+  "version": "0.0.0",
+  "description": "Lightweight, type-safe, accessible drag & drop primitives for Vue.js",
+  "keywords": [
+    "accessibility",
+    "composable",
+    "drag",
+    "draggable",
+    "drop",
+    "headless",
+    "sortable",
+    "vue"
+  ],
+  "license": "MIT",
+  "author": "ubugeeei <ubuge1122@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ubugeeei-prod/draggavue.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vp build && vue-tsc -p tsconfig.build.json",
+    "check": "vp check && vize check",
+    "fmt": "vp fmt",
+    "lint": "vize lint src",
+    "ready": "vp check --fix && vize check && vize lint src && vp test --run && pnpm run build",
+    "test": "vp test --run"
+  },
+  "devDependencies": {
+    "@vizejs/vite-plugin": "^0.291.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "^0.2.5",
+    "vize": "^0.291.0",
+    "vue": "^3.5.40",
+    "vue-tsc": "^3.3.7"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
