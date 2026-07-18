@@ -21,6 +21,15 @@ export {
   release,
   resolveDelta,
 } from "./draggable/drag";
+export type {
+  BoundsOption,
+  DraggableCallbacks,
+  DraggableStyle,
+  UseDraggableOptions,
+  UseDraggableReturn,
+} from "./draggable/useDraggable";
+export { useDraggable } from "./draggable/useDraggable";
+export type { DraggableElement, ElementTarget } from "./shared/dom";
 export type { Axis, Delta, Grid, Position, Rect, Size } from "./shared/geometry";
 export {
   ORIGIN,
