@@ -6,3 +6,4 @@ coverage/
 .vite/
 .vize/
 *.tsbuildinfo
+__screenshots__/

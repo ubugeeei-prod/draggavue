@@ -63,6 +63,7 @@ const positionModel = computed<Position>({
 
 const drag = useDraggable(root, {
   position: positionModel,
+  initialPosition: position ?? initialPosition ?? ORIGIN,
   axis: () => axis,
   grid: () => grid,
   bounds: () => bounds,
