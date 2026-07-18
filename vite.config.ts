@@ -1,3 +1,4 @@
+import { playwright } from "@vitest/browser-playwright";
 import vize from "@vizejs/vite-plugin";
 import { defineConfig } from "vite-plus";
 
@@ -14,9 +15,31 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/**/*.test.ts"],
-    environment: "node",
     passWithNoTests: true,
+    projects: [
+      {
+        plugins: [vize()],
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts"],
+          exclude: ["src/**/*.browser.test.ts"],
+          environment: "node",
+        },
+      },
+      {
+        plugins: [vize()],
+        test: {
+          name: "browser",
+          include: ["src/**/*.browser.test.ts"],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: "chromium" }],
+          },
+        },
+      },
+    ],
   },
   lint: {
     ignorePatterns: ["dist/**"],
