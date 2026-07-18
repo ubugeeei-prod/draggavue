@@ -91,6 +91,40 @@ jobs:
       - run: pnpm exec vp run build
       - run: pnpm exec vp run size
 
+  # Every merge to main republishes the permanent gallery at the
+  # site root: https://ubugeeei-prod.github.io/draggavue/__musea__/
+  musea-pages:
+    name: musea-pages
+    if: github.event_name == 'push'
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    permissions:
+      contents: write
+    concurrency:
+      group: musea-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Build the gallery for the site root
+        env:
+          DRAGGAVUE_MUSEA_BASE: /draggavue/
+        run: pnpm exec vp run musea:build
+
+      - name: Publish to GitHub Pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages
+          git worktree add -B gh-pages /tmp/pages origin/gh-pages
+          cd /tmp/pages
+          find . -maxdepth 1 ! -name . ! -name .git ! -name .nojekyll ! -name 'pr-*' -exec rm -rf {} +
+          cp -R "$GITHUB_WORKSPACE/dist-musea/draggavue/." .
+          printf '<!doctype html>\n<meta http-equiv="refresh" content="0; url=/draggavue/__musea__/" />\n<title>draggavue</title>\n' > index.html
+          touch .nojekyll
+          git add -A
+          git commit -m "musea: main @ ${GITHUB_SHA:0:8}" || echo "nothing to publish"
+          git push origin gh-pages || { git pull --rebase origin gh-pages && git push origin gh-pages; }
+
   musea-preview:
     name: musea-preview
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
