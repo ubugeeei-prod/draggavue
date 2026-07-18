@@ -1,5 +1,9 @@
 name: Preview Cleanup
 
+# Complements the automerge job: merges performed with GITHUB_TOKEN
+# cannot trigger this workflow (recursion guard), so automerge drops
+# its own preview inline. This workflow covers the remaining case —
+# a human closing or merging a PR by hand.
 on:
   pull_request:
     types: [closed]
