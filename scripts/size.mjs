@@ -30,6 +30,11 @@ const ENTRIES = [
     budget: 5_000,
   },
   {
+    label: "vapor components",
+    code: 'export * from "./dist/vapor.js";',
+    budget: 7_500,
+  },
+  {
     label: "pure core only",
     code: 'export { press, movePointer, release, reorder, targetIndexOf } from "./dist/index.js";',
     budget: 1_500,
