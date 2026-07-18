@@ -63,6 +63,7 @@ export default defineConfig({
       "test:unit": "vp test --run --project unit",
       "test:browser": "vp test --run --project browser",
       musea: { command: "vize musea serve", cache: false },
+      size: "node scripts/size.mjs",
       release: { command: "node scripts/release.mjs", cache: false },
       ready: ["vp check --fix", "vize check", "vize lint src", "vp test --run", "vp run build"],
     },

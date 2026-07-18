@@ -35,6 +35,7 @@
     "@types/node": "^26.1.1",
     "@vitest/browser-playwright": "^4.1.10",
     "@vizejs/vite-plugin": "^0.291.0",
+    "esbuild": "^0.28.1",
     "playwright": "^1.61.1",
     "typescript": "^7.0.2",
     "vite-plus": "^0.2.5",
