@@ -15,7 +15,7 @@ export type ConstraintOptions = {
   readonly axis?: MaybeRefOrGetter<Axis | undefined>;
   readonly grid?: MaybeRefOrGetter<Grid | null | undefined>;
   readonly bounds?: MaybeRefOrGetter<BoundsOption | null | undefined>;
-  readonly activationDistance?: number;
+  readonly activationDistance?: MaybeRefOrGetter<number | undefined>;
 };
 
 export type resolveConstraints = (
@@ -73,5 +73,5 @@ export const resolveConstraints: resolveConstraints = (target, options, current)
   axis: toValue(options.axis) ?? "both",
   grid: toValue(options.grid) ?? null,
   bounds: resolveBounds(target, options.bounds, current),
-  activationDistance: px(options.activationDistance ?? 0),
+  activationDistance: px(toValue(options.activationDistance) ?? 0),
 });

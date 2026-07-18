@@ -12,9 +12,9 @@ import type { DragState, DragTransition } from "./drag";
 
 export type DragA11yOptions = {
   /** Override or disable assistive-technology messages. */
-  a11y?: Partial<DragA11yMessages> | false;
+  a11y?: Partial<DragA11yMessages> | false | undefined;
   /** Tune arrow-key steps, or `false` to opt out of keyboard dragging. */
-  keyboard?: boolean | Partial<KeyboardSteps>;
+  keyboard?: boolean | Partial<KeyboardSteps> | undefined;
 };
 
 /** Spread onto the handle element (`v-bind="attrs"`). */

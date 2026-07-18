@@ -24,23 +24,23 @@ import { useDragA11y } from "./dragA11y";
 // --- Types & Signatures ---
 
 export interface DraggableCallbacks {
-  onDragStart?: (session: Dragging) => void;
-  onDragMove?: (session: Dragging) => void;
-  onDragEnd?: (position: Position) => void;
-  onDragCancel?: (position: Position) => void;
+  onDragStart?: ((session: Dragging) => void) | undefined;
+  onDragMove?: ((session: Dragging) => void) | undefined;
+  onDragEnd?: ((position: Position) => void) | undefined;
+  onDragCancel?: ((position: Position) => void) | undefined;
 }
 
 export interface UseDraggableOptions
   extends ConstraintOptions, DragA11yOptions, DraggableCallbacks {
   /** Settled position at rest. Defaults to `{ x: 0, y: 0 }`. */
-  initialPosition?: Position;
+  initialPosition?: Position | undefined;
   /**
    * Own the position from outside (controlled mode). Committed
    * positions are written back into this ref.
    */
-  position?: Ref<Position>;
+  position?: Ref<Position> | undefined;
   /** Drag handle. Defaults to the target element itself. */
-  handle?: ElementTarget;
+  handle?: ElementTarget | undefined;
   /** Reactively disable dragging. An active session is canceled. */
   disabled?: MaybeRefOrGetter<boolean | undefined>;
 }
