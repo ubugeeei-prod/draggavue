@@ -82,6 +82,59 @@ jobs:
       - run: pnpm exec vp run build
       - run: pnpm exec vp run size
 
+  musea-preview:
+    name: musea-preview
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run musea:build
+      - uses: actions/upload-artifact@v4
+        id: gallery
+        with:
+          name: musea-preview
+          path: dist-musea
+          retention-days: 14
+      - name: Pin the preview link on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: ${{ steps.gallery.outputs.artifact-url }}
+        run: |
+          marker="<!-- musea-preview -->"
+          body="$marker
+          ### 🖼 Musea preview
+
+          - [Download the static gallery]($URL), unzip, then \`npx serve .\` and open \`/__musea__/\`
+          - Or run it live from this branch: \`vp run musea\`
+
+          _Rebuilt on every push — the link always points at the latest run._"
+          existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id")
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -f body="$body" > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -f body="$body" > /dev/null
+          fi
+
+  pkg-pr-new:
+    name: pkg-pr-new
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    # Best-effort until the pkg.pr.new GitHub App is installed on the
+    # repository — never blocks automerge.
+    continue-on-error: true
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run build
+      - name: Publish a continuous release
+        run: pnpm dlx pkg-pr-new publish
+
   automerge:
     name: automerge
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
