@@ -8,13 +8,24 @@ import { defineConfig } from "vite-plus";
 // library build. The musea tasks opt in through this flag.
 const MUSEA = process.env["DRAGGAVUE_MUSEA"] === "1";
 
+// Where the static gallery will be served from. CI sets this to
+// the GitHub Pages subdirectory of the PR (e.g. /draggavue/pr-12/)
+// so assets and the SPA router agree on their prefix.
+const MUSEA_BASE = process.env["DRAGGAVUE_MUSEA_BASE"] ?? "/";
+
 // Second library pass: the same SFCs compiled by Vize's Vapor
 // compiler, emitted next to the vdom build as dist/vapor.js.
 const VAPOR = process.env["DRAGGAVUE_VAPOR"] === "1";
 
 export default defineConfig({
   plugins: MUSEA
-    ? [vize(), musea({ include: ["stories/**/*.art.vue"] })]
+    ? [
+        vize(),
+        musea({
+          include: ["stories/**/*.art.vue"],
+          basePath: `${MUSEA_BASE.replace(/\/$/, "")}/__musea__`,
+        }),
+      ]
     : [vize(VAPOR ? { vapor: true } : {})],
   build: MUSEA
     ? {
