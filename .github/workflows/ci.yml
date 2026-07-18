@@ -155,4 +155,17 @@ jobs:
     steps:
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge --squash --repo "$GITHUB_REPOSITORY" "${{ github.event.pull_request.number }}"
+          PR: ${{ github.event.pull_request.number }}
+        # The branch ruleset aggregates required-check states with a
+        # small lag after the last job finishes, so the first attempt
+        # can lose the race. Retry briefly instead of failing the run.
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if gh pr merge --squash --repo "$GITHUB_REPOSITORY" "$PR"; then
+              exit 0
+            fi
+            echo "merge attempt $attempt refused — retrying in 15s"
+            sleep 15
+          done
+          echo "giving up after 5 attempts"
+          exit 1
