@@ -30,6 +30,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./vapor": {
+      "types": "./dist/vapor/index.d.ts",
+      "default": "./dist/vapor.js"
+    },
     "./styles.css": "./dist/styles/index.css",
     "./styles/core.css": "./dist/styles/core.css",
     "./styles/lift.css": "./dist/styles/lift.css"
@@ -46,10 +50,10 @@
     "vite-plus": "^0.2.5",
     "vitest": "^4.1.10",
     "vize": "^0.291.0",
-    "vue": "^3.5.40"
+    "vue": "3.6.0-rc.1"
   },
   "peerDependencies": {
-    "vue": "^3.5.0"
+    "vue": "^3.5.0 || ^3.6.0-0"
   },
   "packageManager": "pnpm@11.14.0"
 }

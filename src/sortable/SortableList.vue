@@ -1,22 +1,15 @@
 <script setup lang="ts" generic="T">
-import { useTemplateRef } from "vue";
+import { computed, useTemplateRef } from "vue";
 import type { SortA11yMessages } from "../a11y/messages";
 import type { Orientation } from "./sortable";
 import type { SortEvent } from "./useSortable";
 import { useSortable } from "./useSortable";
 
-const {
-  items,
-  itemKey,
-  tag = "ul",
-  itemTag = "li",
-  orientation = "vertical",
-  disabled = false,
-  activationDistance = 0,
-  transition = undefined,
-  keyboard = true,
-  a11y = undefined,
-} = defineProps<{
+// Not destructured on purpose: destructured props compile to an
+// empty render under Vize's Vapor mode today. Revert to the style
+// guide's destructure once ubugeeei-prod/vize#3072 ships. Defaults
+// live in the composable, which treats undefined as "use default".
+const props = defineProps<{
   /** Controlled list. Pair with `@update:items`. */
   items: readonly T[];
   /** Stable key per item — never use the index. */
@@ -49,14 +42,14 @@ defineSlots<{
 const list = useTemplateRef<HTMLElement>("list");
 
 const sortable = useSortable(list, {
-  items: () => items,
+  items: () => props.items,
   onReorder: (next, event) => emit("update:items", next, event),
-  orientation: () => orientation,
-  disabled: () => disabled,
-  activationDistance: () => activationDistance,
-  transition,
-  keyboard,
-  a11y,
+  orientation: () => props.orientation,
+  disabled: () => props.disabled,
+  activationDistance: () => props.activationDistance,
+  transition: props.transition,
+  keyboard: props.keyboard,
+  a11y: props.a11y,
   onSortStart: (event) => emit("sort:start", event),
   onSortMove: (event) => emit("sort:move", event),
   onSortEnd: (event) => emit("sort:end", event),
@@ -67,6 +60,16 @@ const active = sortable.active;
 const itemStyle = sortable.itemStyle;
 const itemAttrs = sortable.itemAttrs;
 
+// Template avoids `props.*` too — Vapor compiles those references
+// to a `_ctx.props` that does not exist (same tracking issue).
+const rootTag = computed(() => props.tag ?? "ul");
+const itemTag = computed(() => props.itemTag ?? "li");
+const items = computed(() => props.items);
+
+function itemKeyOf(item: T): PropertyKey {
+  return props.itemKey(item);
+}
+
 defineExpose({
   /** Root DOM element. */
   element: list,
@@ -76,11 +79,11 @@ defineExpose({
 </script>
 
 <template>
-  <component :is="tag" ref="list">
+  <component :is="rootTag" ref="list">
     <component
       :is="itemTag"
       v-for="(item, index) in items"
-      :key="itemKey(item)"
+      :key="itemKeyOf(item)"
       v-bind="itemAttrs(index)"
       :style="itemStyle(index)"
     >

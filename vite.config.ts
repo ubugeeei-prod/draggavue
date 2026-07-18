@@ -8,21 +8,28 @@ import { defineConfig } from "vite-plus";
 // library build. The musea tasks opt in through this flag.
 const MUSEA = process.env["DRAGGAVUE_MUSEA"] === "1";
 
+// Second library pass: the same SFCs compiled by Vize's Vapor
+// compiler, emitted next to the vdom build as dist/vapor.js.
+const VAPOR = process.env["DRAGGAVUE_VAPOR"] === "1";
+
 export default defineConfig({
-  plugins: MUSEA ? [vize(), musea({ include: ["stories/**/*.art.vue"] })] : [vize()],
+  plugins: MUSEA
+    ? [vize(), musea({ include: ["stories/**/*.art.vue"] })]
+    : [vize(VAPOR ? { vapor: true } : {})],
   build: MUSEA
     ? {
         outDir: "dist-musea",
       }
     : {
         lib: {
-          entry: "src/index.ts",
+          entry: VAPOR ? "src/vapor/index.ts" : "src/index.ts",
           formats: ["es"],
-          fileName: "index",
+          fileName: VAPOR ? "vapor" : "index",
         },
         rollupOptions: {
           external: ["vue"],
         },
+        emptyOutDir: !VAPOR,
       },
   test: {
     passWithNoTests: true,
@@ -32,7 +39,7 @@ export default defineConfig({
         test: {
           name: "unit",
           include: ["src/**/*.test.ts"],
-          exclude: ["src/**/*.browser.test.ts"],
+          exclude: ["src/**/*.browser.test.ts", "src/**/*.vapor.test.ts"],
           environment: "node",
         },
       },
@@ -41,6 +48,24 @@ export default defineConfig({
         test: {
           name: "browser",
           include: ["src/**/*.browser.test.ts"],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: "chromium" }],
+          },
+        },
+      },
+      {
+        plugins: [vize({ vapor: true })],
+        resolve: {
+          // Vapor runtime APIs live in the with-vapor build; vue's
+          // default bundler entry does not include them yet (3.6-rc).
+          alias: { vue: "vue/dist/vue.runtime-with-vapor.esm-browser.js" },
+        },
+        test: {
+          name: "vapor",
+          include: ["src/**/*.vapor.test.ts"],
           browser: {
             enabled: true,
             provider: playwright(),
@@ -62,7 +87,12 @@ export default defineConfig({
   run: {
     tasks: {
       dev: { command: "vp dev -c vite.config.playground.ts", cache: false },
-      build: ["vp build", "tsc -p tsconfig.build.json", "node scripts/copyStyles.mjs"],
+      build: [
+        "vp build",
+        "env DRAGGAVUE_VAPOR=1 vp build",
+        "tsc -p tsconfig.build.json",
+        "node scripts/copyStyles.mjs",
+      ],
       check: ["vp check", "vize check"],
       "check:fmt": "vp check --no-lint",
       "check:oxlint": "vp check --no-fmt",
@@ -72,6 +102,7 @@ export default defineConfig({
       test: "vp test --run",
       "test:unit": "vp test --run --project unit",
       "test:browser": "vp test --run --project browser",
+      "test:vapor": "vp test --run --project vapor",
       musea: { command: "env DRAGGAVUE_MUSEA=1 vize musea serve", cache: false },
       "musea:build": { command: "env DRAGGAVUE_MUSEA=1 vize musea serve --build", cache: false },
       size: "node scripts/size.mjs",

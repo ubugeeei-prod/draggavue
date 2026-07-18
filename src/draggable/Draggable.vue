@@ -8,18 +8,11 @@ import type { BoundsOption } from "./constraints";
 import type { DragState, Dragging } from "./drag";
 import { useDraggable } from "./useDraggable";
 
-const {
-  tag = "div",
-  position = undefined,
-  initialPosition = undefined,
-  axis = "both",
-  grid = null,
-  bounds = null,
-  disabled = false,
-  activationDistance = 0,
-  keyboard = true,
-  a11y = undefined,
-} = defineProps<{
+// Not destructured on purpose: destructured props compile to an
+// empty render under Vize's Vapor mode today. Revert to the style
+// guide's destructure once ubugeeei-prod/vize#3072 ships. Defaults
+// live in the composable, which treats undefined as "use default".
+const props = defineProps<{
   /** Rendered root element. */
   tag?: string;
   /** Controlled position. Pair with `@update:position`. */
@@ -52,9 +45,9 @@ const root = useTemplateRef<HTMLElement>("root");
 // Bridges the controlled/uncontrolled prop pair into the single
 // position ref the composable owns. No watchers: writes emit, reads
 // prefer the prop when the parent controls it.
-const fallback = shallowRef<Position>(position ?? initialPosition ?? ORIGIN);
+const fallback = shallowRef<Position>(props.position ?? props.initialPosition ?? ORIGIN);
 const positionModel = computed<Position>({
-  get: () => position ?? fallback.value,
+  get: () => props.position ?? fallback.value,
   set: (next) => {
     fallback.value = next;
     emit("update:position", next);
@@ -63,14 +56,14 @@ const positionModel = computed<Position>({
 
 const drag = useDraggable(root, {
   position: positionModel,
-  initialPosition: position ?? initialPosition ?? ORIGIN,
-  axis: () => axis,
-  grid: () => grid,
-  bounds: () => bounds,
-  disabled: () => disabled,
-  activationDistance: () => activationDistance,
-  keyboard,
-  a11y,
+  initialPosition: props.position ?? props.initialPosition ?? ORIGIN,
+  axis: () => props.axis,
+  grid: () => props.grid,
+  bounds: () => props.bounds,
+  disabled: () => props.disabled,
+  activationDistance: () => props.activationDistance,
+  keyboard: props.keyboard,
+  a11y: props.a11y,
   onDragStart: (session) => emit("drag:start", session),
   onDragMove: (session) => emit("drag:move", session),
   onDragEnd: (settled) => emit("drag:end", settled),
@@ -83,6 +76,10 @@ const isDragging = drag.isDragging;
 const style = drag.style;
 const attrs = drag.attrs;
 
+// Template avoids `props.*` too — Vapor compiles those references
+// to a `_ctx.props` that does not exist (same tracking issue).
+const rootTag = computed(() => props.tag ?? "div");
+
 defineExpose({
   /** Root DOM element. */
   element: root,
@@ -93,7 +90,7 @@ defineExpose({
 </script>
 
 <template>
-  <component :is="tag" ref="root" v-bind="attrs" :style="style">
+  <component :is="rootTag" ref="root" v-bind="attrs" :style="style">
     <slot :is-dragging="isDragging" :position="livePosition" :state="state" />
   </component>
 </template>
