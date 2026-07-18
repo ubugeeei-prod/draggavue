@@ -1,8 +1,8 @@
 export { announce } from "./a11y/announcer";
 export type { DragIntent, KeyboardSteps } from "./a11y/keyboard";
 export { DEFAULT_STEPS, intentFromKey } from "./a11y/keyboard";
-export type { DragA11yMessages } from "./a11y/messages";
-export { DEFAULT_MESSAGES, describePosition } from "./a11y/messages";
+export type { DragA11yMessages, SortA11yMessages } from "./a11y/messages";
+export { DEFAULT_MESSAGES, DEFAULT_SORT_MESSAGES, describePosition } from "./a11y/messages";
 export type { BoundsOption, ConstraintOptions } from "./draggable/constraints";
 export type {
   DragBounds,
@@ -46,6 +46,20 @@ export {
   shiftFor,
   targetIndexOf,
 } from "./sortable/sortable";
+export { default as SortableList } from "./sortable/SortableList.vue";
+export type {
+  SortableItemA11y,
+  SortableItemAttrs,
+  SortableItemStyle,
+} from "./sortable/sortableItemView";
+export { sortableItemAttrs, sortableItemStyle } from "./sortable/sortableItemView";
+export type {
+  ActiveSort,
+  SortEvent,
+  UseSortableOptions,
+  UseSortableReturn,
+} from "./sortable/useSortable";
+export { useSortable } from "./sortable/useSortable";
 export type { Axis, Delta, Grid, Position, Rect, Size } from "./shared/geometry";
 export {
   ORIGIN,

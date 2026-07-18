@@ -8,7 +8,7 @@ export type DraggableElement = HTMLElement | SVGElement;
 export type ElementTarget = MaybeRefOrGetter<DraggableElement | null | undefined>;
 
 export type isElement = (value: unknown) => value is DraggableElement;
-export type measureRect = (element: DraggableElement) => Rect;
+export type measureRect = (element: Element) => Rect;
 export type pointFromEvent = (event: PointerEvent) => Position;
 
 /** Duck-typed so elements from other realms (iframes) also pass. */
