@@ -1,23 +1,27 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from "vue";
 import { computed, getCurrentScope, onScopeDispose, shallowRef, toValue, watch } from "vue";
 import type { DraggableElement, ElementTarget } from "../shared/dom";
-import {
-  isElement,
-  measureRect,
-  pointFromEvent,
-  restoreUserSelect,
-  suppressUserSelect,
-} from "../shared/dom";
-import type { Axis, Grid, Position, Rect } from "../shared/geometry";
+import { pointFromEvent, restoreUserSelect, suppressUserSelect } from "../shared/dom";
+import type { Position } from "../shared/geometry";
 import { ORIGIN, translate } from "../shared/geometry";
 import { px } from "../shared/units";
-import type { DragBounds, DragConstraints, DragState, DragTransition, Dragging } from "./drag";
-import { IDLE, cancel as cancelDrag, movePointer, press, release } from "./drag";
+import type { ConstraintOptions } from "./constraints";
+import { FREE_CONSTRAINTS, resolveConstraints } from "./constraints";
+import type { DragConstraints, DragState, DragTransition, Dragging } from "./drag";
+import {
+  IDLE,
+  cancel as cancelDrag,
+  commit,
+  grab,
+  moveBy,
+  movePointer,
+  press,
+  release,
+} from "./drag";
+import type { DragA11yOptions, DraggableAttrs } from "./dragA11y";
+import { useDragA11y } from "./dragA11y";
 
 // --- Types & Signatures ---
-
-/** Bounding option: an element, a client rect, or the direct parent. */
-export type BoundsOption = DraggableElement | Rect | "parent";
 
 export interface DraggableCallbacks {
   onDragStart?: (session: Dragging) => void;
@@ -26,7 +30,8 @@ export interface DraggableCallbacks {
   onDragCancel?: (position: Position) => void;
 }
 
-export interface UseDraggableOptions extends DraggableCallbacks {
+export interface UseDraggableOptions
+  extends ConstraintOptions, DragA11yOptions, DraggableCallbacks {
   /** Settled position at rest. Defaults to `{ x: 0, y: 0 }`. */
   initialPosition?: Position;
   /**
@@ -34,18 +39,10 @@ export interface UseDraggableOptions extends DraggableCallbacks {
    * positions are written back into this ref.
    */
   position?: Ref<Position>;
-  /** Constrain movement to one axis. */
-  axis?: MaybeRefOrGetter<Axis | undefined>;
-  /** Snap deltas to a `[x, y]` pixel grid. */
-  grid?: MaybeRefOrGetter<Grid | null | undefined>;
-  /** Keep the element fully inside the given bounds while dragging. */
-  bounds?: MaybeRefOrGetter<BoundsOption | null | undefined>;
   /** Drag handle. Defaults to the target element itself. */
   handle?: ElementTarget;
   /** Reactively disable dragging. An active session is canceled. */
   disabled?: MaybeRefOrGetter<boolean | undefined>;
-  /** Pixels the pointer must travel before the drag activates. */
-  activationDistance?: number;
 }
 
 export type DraggableStyle = {
@@ -54,13 +51,15 @@ export type DraggableStyle = {
 };
 
 export interface UseDraggableReturn {
-  /** Live position: follows the pointer per frame, settles on release. */
+  /** Live position: follows the input per frame, settles on release. */
   position: ComputedRef<Position>;
   /** Read-only view of the drag session state. */
   state: ComputedRef<DragState>;
   isDragging: ComputedRef<boolean>;
   /** Bind to `:style` of the target element. */
   style: ComputedRef<DraggableStyle>;
+  /** Spread onto the handle: ARIA attributes + `data-dragging`. */
+  attrs: ComputedRef<DraggableAttrs>;
   /** Overwrite the settled position. */
   setPosition: (next: Position) => void;
   /** Restore the initial position. */
@@ -69,26 +68,18 @@ export interface UseDraggableReturn {
   cancel: () => void;
 }
 
-const FREE_CONSTRAINTS: DragConstraints = {
-  axis: "both",
-  grid: null,
-  bounds: null,
-  activationDistance: px(0),
-};
-
 /**
- * Pointer-driven drag behavior for a single element.
+ * Headless, accessible drag behavior for a single element.
  *
- * Headless: this composable computes positions and a `transform`
- * style; rendering stays fully in the caller's hands. All movement
- * decisions live in the pure state machine (`drag.ts`) — this layer
- * only wires DOM events and applies transition effects.
+ * The composable wires DOM events (pointer + keyboard) and applies
+ * transition effects; every movement decision lives in the pure
+ * state machine (`drag.ts`).
  */
 export function useDraggable(
   target: ElementTarget,
   options: UseDraggableOptions = {},
 ): UseDraggableReturn {
-  const { initialPosition = ORIGIN, activationDistance = 0 } = options;
+  const { initialPosition = ORIGIN } = options;
 
   // Immutable snapshots swapped per frame — deep reactivity would
   // only add proxy overhead on the hot path.
@@ -114,46 +105,8 @@ export function useDraggable(
   let latestPointerId = -1;
   let selectionSuppressed = false;
 
-  function resolveConstraints(): DragConstraints {
-    return {
-      axis: toValue(options.axis) ?? "both",
-      grid: toValue(options.grid) ?? null,
-      bounds: resolveBounds(),
-      activationDistance: px(activationDistance),
-    };
-  }
-
-  function containerRectOf(raw: BoundsOption, element: DraggableElement): Rect | null {
-    if (raw === "parent") {
-      const parent = element.parentElement;
-      return parent === null ? null : measureRect(parent);
-    }
-    return isElement(raw) ? measureRect(raw) : raw;
-  }
-
-  /**
-   * Bounds are measured once per session, in "offset space": the
-   * container rect is shifted by the element's untranslated page
-   * position, so the pure layer clamps offsets without ever touching
-   * the DOM again.
-   */
-  function resolveBounds(): DragBounds | null {
-    const element = toValue(target);
-    const raw = toValue(options.bounds) ?? null;
-    if (element === null || element === undefined || raw === null) return null;
-    const containerRect = containerRectOf(raw, element);
-    if (containerRect === null) return null;
-    const elementRect = measureRect(element);
-    const current = settled.value;
-    return {
-      rect: {
-        left: px(containerRect.left - (elementRect.left - current.x)),
-        top: px(containerRect.top - (elementRect.top - current.y)),
-        width: containerRect.width,
-        height: containerRect.height,
-      },
-      size: { width: elementRect.width, height: elementRect.height },
-    };
+  function isDisabled(): boolean {
+    return toValue(options.disabled) ?? false;
   }
 
   function applyTransition(transition: DragTransition): void {
@@ -161,6 +114,7 @@ export function useDraggable(
     // Tear down before user callbacks run so a throwing callback can
     // never leak window listeners.
     if (transition.state.status === "idle") endSession();
+    a11y.announceTransition(transition);
     switch (transition.effect) {
       case "none":
         return;
@@ -182,10 +136,9 @@ export function useDraggable(
   }
 
   function onPointerDown(event: PointerEvent): void {
-    if (toValue(options.disabled) ?? false) return;
-    if (event.button !== 0) return;
+    if (isDisabled() || event.button !== 0) return;
     if (state.value.status !== "idle") return;
-    constraints = resolveConstraints();
+    constraints = resolveConstraints(target, options, settled.value);
     beginSession();
     applyTransition(
       press(state.value, event.pointerId, settled.value, pointFromEvent(event), constraints),
@@ -193,7 +146,7 @@ export function useDraggable(
   }
 
   function onPointerMove(event: PointerEvent): void {
-    if (toValue(options.disabled) ?? false) {
+    if (isDisabled()) {
       cancelSession();
       return;
     }
@@ -258,13 +211,25 @@ export function useDraggable(
     if (state.value.status === "idle") endSession();
   }
 
-  function setPosition(next: Position): void {
-    settled.value = next;
-  }
-
-  function reset(): void {
-    setPosition(initialPosition);
-  }
+  const a11y = useDragA11y(
+    {
+      getState: () => state.value,
+      isDisabled,
+      grab: () => {
+        if (state.value.status !== "idle") return;
+        constraints = resolveConstraints(target, options, settled.value);
+        applyTransition(grab(state.value, settled.value));
+      },
+      moveBy: (dx, dy) => {
+        applyTransition(moveBy(state.value, { dx: px(dx), dy: px(dy) }, constraints));
+      },
+      drop: () => {
+        applyTransition(commit(state.value));
+      },
+      cancel: cancelSession,
+    },
+    options,
+  );
 
   // The handle only exists after mount (template refs) and may be
   // swapped by v-if — a watcher is the reactive wiring point.
@@ -276,12 +241,13 @@ export function useDraggable(
     (element, _previous, onCleanup) => {
       if (element === null) return;
       const controller = new AbortController();
-      // Widening to GlobalEventHandlers keeps the typed `pointerdown`
-      // overload across the HTMLElement | SVGElement union.
+      // Widening to GlobalEventHandlers keeps the typed event
+      // overloads across the HTMLElement | SVGElement union.
       const listenerTarget: GlobalEventHandlers = element;
-      listenerTarget.addEventListener("pointerdown", onPointerDown, {
-        signal: controller.signal,
-      });
+      const { signal } = controller;
+      listenerTarget.addEventListener("pointerdown", onPointerDown, { signal });
+      listenerTarget.addEventListener("keydown", a11y.onKeydown, { signal });
+      listenerTarget.addEventListener("focusout", a11y.onFocusout, { signal });
       // Without this, mobile browsers claim the gesture for scrolling
       // before the drag can activate.
       const elementStyle = element.style;
@@ -304,8 +270,13 @@ export function useDraggable(
     state: computed(() => state.value),
     isDragging,
     style,
-    setPosition,
-    reset,
+    attrs: a11y.attrs,
+    setPosition: (next) => {
+      settled.value = next;
+    },
+    reset: () => {
+      settled.value = initialPosition;
+    },
     cancel: cancelSession,
   };
 }
