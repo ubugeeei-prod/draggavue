@@ -73,10 +73,19 @@ jobs:
       - uses: ./.github/actions/setup
       - run: pnpm exec vp run build
 
+  size:
+    name: size
+    runs-on: blacksmith-32vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: pnpm exec vp run build
+      - run: pnpm exec vp run size
+
   automerge:
     name: automerge
     if: github.event_name == 'pull_request' && !github.event.pull_request.draft
-    needs: [fmt, oxlint, vize-lint, typecheck, unit, browser, build]
+    needs: [fmt, oxlint, vize-lint, typecheck, unit, browser, build, size]
     runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
       contents: write
