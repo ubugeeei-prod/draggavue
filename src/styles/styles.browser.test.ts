@@ -1,6 +1,7 @@
 import { describe, expect, it, onTestFinished } from "vitest";
 import "./core.css";
 import "./lift.css";
+import "./spring.css";
 
 type ProbeOptions = {
   /** Freeze transitions so computed values are final, not mid-tween. */
@@ -42,8 +43,9 @@ describe("lift.css", () => {
 
     probe.setAttribute("data-dragging", "true");
     const style = getComputedStyle(probe);
-    expect(style.scale).toBe("1.02");
-    expect(style.boxShadow).not.toBe("none");
+    expect(style.scale).toBe("1.015");
+    // Layered elevation: hairline + contact + two ambient shadows.
+    expect(style.boxShadow.match(/rgba?\(/g)).toHaveLength(4);
   });
 
   it("arms the spring settle only while not dragging", () => {
@@ -61,5 +63,16 @@ describe("lift.css", () => {
     probe.setAttribute("data-dragging", "true");
 
     expect(getComputedStyle(probe).scale).toBe("1.1");
+  });
+});
+
+describe("spring.css", () => {
+  it("moves every easing onto the spring", () => {
+    const probe = mountProbe();
+    const style = getComputedStyle(probe);
+
+    expect(style.getPropertyValue("--dv-ease").trim()).toContain("linear(");
+    expect(style.getPropertyValue("--dv-lift-duration").trim()).toBe("240ms");
+    expect(style.getPropertyValue("--dv-settle-duration").trim()).toBe("620ms");
   });
 });

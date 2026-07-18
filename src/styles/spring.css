@@ -1,0 +1,36 @@
+/**
+ * draggavue/styles/spring.css — everything on springs.
+ *
+ * An opt-in preset that swaps the easing custom properties for a
+ * bouncier spring (~12% overshoot) and stretches the timings, so
+ * sortable neighbors, the lift, and the settle all move like they
+ * share one physical system. Layer it after core/lift:
+ *
+ *   import "draggavue/styles.css";
+ *   import "draggavue/styles/spring.css";
+ *
+ * Custom properties set here:
+ *   --dv-ease, --dv-ease-spring, --dv-lift-duration,
+ *   --dv-settle-duration
+ */
+
+:where([data-draggavue], [data-draggavue-index]) {
+  --dv-ease-spring: linear(
+    0,
+    0.3204 5.8%,
+    0.6738 11.6%,
+    0.892 16.5%,
+    1.0466 22%,
+    1.1157 27.6%,
+    1.1181 32.4%,
+    1.0774 38.8%,
+    1.0102 49.5%,
+    0.9846 57.5%,
+    0.9925 66.9%,
+    1.0011 80.4%,
+    1
+  );
+  --dv-ease: var(--dv-ease-spring);
+  --dv-lift-duration: 240ms;
+  --dv-settle-duration: 620ms;
+}
