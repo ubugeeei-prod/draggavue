@@ -1,0 +1,27 @@
+/**
+ * draggavue/styles/core.css — opt-in interaction affordances.
+ *
+ * Cursor language, tap-highlight cleanup, and a focus ring for
+ * every draggavue handle. Selectors are wrapped in :where() so
+ * their specificity is zero — any rule of yours wins.
+ *
+ * Custom properties:
+ *   --dv-focus-ring-width   default 2px
+ *   --dv-focus-ring-color   default color-mix(in oklab, currentColor 55%, transparent)
+ *   --dv-focus-ring-offset  default 2px
+ */
+
+:where([data-draggavue], [data-draggavue-index]) {
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where([data-draggavue], [data-draggavue-index])[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+:where([data-draggavue], [data-draggavue-index]):focus-visible {
+  outline: var(--dv-focus-ring-width, 2px) solid
+    var(--dv-focus-ring-color, color-mix(in oklab, currentColor 55%, transparent));
+  outline-offset: var(--dv-focus-ring-offset, 2px);
+}

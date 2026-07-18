@@ -19,5 +19,11 @@
       "draggavue": ["./src/index.ts"]
     }
   },
-  "include": ["src", "playground/src", "vite.config.ts", "vite.config.playground.ts"]
+  "include": [
+    "src",
+    "playground/src",
+    "types/css.d.ts",
+    "vite.config.ts",
+    "vite.config.playground.ts"
+  ]
 }

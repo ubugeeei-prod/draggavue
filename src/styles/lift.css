@@ -1,0 +1,80 @@
+/**
+ * draggavue/styles/lift.css — opt-in motion.
+ *
+ * The dragged element floats: a gentle scale + shadow while
+ * grabbed, and a spring settle when it lands. Movement uses the
+ * individual `scale` property, so it never fights the library's
+ * `transform: translate3d` positioning.
+ *
+ * Two easings drive everything:
+ *
+ *   --dv-ease         easeOutQuint — confident, quick to settle
+ *   --dv-ease-spring  a linear() spring with a soft single
+ *                     overshoot, for the moment of release
+ *
+ * The spring animates `transform` only while NOT dragging, which
+ * yields: instant 1:1 tracking during the drag, and a springy
+ * return on cancel (Escape), reset(), and controlled snaps.
+ *
+ * Custom properties:
+ *   --dv-lift-scale       default 1.02
+ *   --dv-lift-shadow      default 0 12px 32px -8px rgb(0 0 0 / 0.25)
+ *   --dv-lift-duration    default 200ms
+ *   --dv-settle-duration  default 480ms
+ *
+ * Everything respects prefers-reduced-motion.
+ */
+
+:where([data-draggavue], [data-draggavue-index]) {
+  --dv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dv-ease-spring: linear(
+    0,
+    0.2178 2.1%,
+    0.5981 5.7%,
+    0.8973 9.3%,
+    1.0576 12%,
+    1.1444 14.8%,
+    1.1747 17%,
+    1.1576 19.8%,
+    1.1015 23.5%,
+    1.0409 27.5%,
+    0.9959 32.4%,
+    0.9784 37.2%,
+    0.9819 42.3%,
+    0.9982 50.2%,
+    1.0044 59.5%,
+    0.9997 79%,
+    1
+  );
+
+  transition:
+    scale var(--dv-lift-duration, 200ms) var(--dv-ease),
+    box-shadow var(--dv-lift-duration, 200ms) var(--dv-ease);
+}
+
+:where([data-draggavue], [data-draggavue-index])[data-dragging="true"] {
+  scale: var(--dv-lift-scale, 1.02);
+  box-shadow: var(--dv-lift-shadow, 0 12px 32px -8px rgb(0 0 0 / 0.25));
+}
+
+/*
+ * The settle spring. Only free-drag roots get it: sortable items
+ * receive their make-room transition inline from the library, and
+ * springing those would double-animate.
+ */
+:where([data-draggavue]):not([data-dragging="true"]) {
+  transition:
+    transform var(--dv-settle-duration, 480ms) var(--dv-ease-spring),
+    scale var(--dv-lift-duration, 200ms) var(--dv-ease),
+    box-shadow var(--dv-lift-duration, 200ms) var(--dv-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-draggavue], [data-draggavue-index]) {
+    transition: none;
+  }
+
+  :where([data-draggavue], [data-draggavue-index])[data-dragging="true"] {
+    scale: none;
+  }
+}

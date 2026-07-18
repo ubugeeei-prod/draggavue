@@ -29,7 +29,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./styles.css": "./dist/styles/index.css",
+    "./styles/core.css": "./dist/styles/core.css",
+    "./styles/lift.css": "./dist/styles/lift.css"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

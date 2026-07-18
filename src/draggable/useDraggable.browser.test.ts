@@ -333,6 +333,8 @@ describe("keyboard", () => {
     const element = harness.element();
     expect(element.getAttribute("tabindex")).toBeNull();
     expect(element.getAttribute("role")).toBeNull();
+    // The styling marker stays — stylesheets must keep working.
+    expect(element.getAttribute("data-draggavue")).toBe("");
     fireKey(element, " ");
     await nextFrames();
     expect(harness.drag().isDragging.value).toBe(false);
@@ -344,6 +346,7 @@ describe("accessibility surface", () => {
     const harness = setup();
     await nextFrames();
     const element = harness.element();
+    expect(element.getAttribute("data-draggavue")).toBe("");
     expect(element.getAttribute("role")).toBe("button");
     expect(element.getAttribute("tabindex")).toBe("0");
     expect(element.getAttribute("aria-roledescription")).toBe("draggable");

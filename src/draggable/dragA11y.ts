@@ -38,6 +38,11 @@ export type DragA11yOptions = {
 
 /** Spread onto the handle element (`v-bind="attrs"`). */
 export type DraggableAttrs = {
+  /**
+   * Constant marker for styling and the opt-in stylesheets —
+   * present on every handle, dragging or not.
+   */
+  readonly "data-draggavue": "";
   readonly role?: "button";
   readonly tabindex?: 0;
   readonly "aria-roledescription"?: string;
@@ -91,15 +96,18 @@ export function useDragA11y(host: DragA11yHost, options: DragA11yOptions): DragA
   const attrs = computed<DraggableAttrs>(() => {
     // `getState` reads the host's reactive state, so this computed
     // re-evaluates as sessions start and settle.
-    const live: Pick<DraggableAttrs, "data-dragging"> =
-      host.getState().status === "dragging" ? { "data-dragging": "true" } : {};
-    if (steps === null) return live;
+    const base: DraggableAttrs = {
+      "data-draggavue": "",
+      ...(host.getState().status === "dragging" ? { "data-dragging": "true" as const } : {}),
+    };
+    if (steps === null) return base;
+
     return {
+      ...base,
       role: "button",
       tabindex: 0,
       "aria-roledescription": (messages ?? DEFAULT_MESSAGES).roleDescription,
       ...(instructionsId.value === null ? {} : { "aria-describedby": instructionsId.value }),
-      ...live,
     };
   });
 

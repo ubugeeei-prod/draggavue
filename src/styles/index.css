@@ -1,0 +1,15 @@
+/**
+ * draggavue/styles.css — the full opt-in set.
+ *
+ * Import once, anywhere:
+ *
+ *   import "draggavue/styles.css";
+ *
+ * Or pick layers individually:
+ *
+ *   import "draggavue/styles/core.css";  // cursors + focus ring
+ *   import "draggavue/styles/lift.css";  // lift + spring settle
+ */
+
+@import "./core.css";
+@import "./lift.css";

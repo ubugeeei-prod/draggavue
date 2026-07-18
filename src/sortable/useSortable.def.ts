@@ -76,8 +76,11 @@ export interface UseSortableOptions<T> {
    * Automatically dropped under `prefers-reduced-motion`.
    *
    * Set to `false` to disable, or provide any transition string.
+   * The default references `--dv-ease` so loading the opt-in
+   * stylesheet upgrades the easing automatically; without it the
+   * `var()` falls back to plain `ease`.
    *
-   * @default "transform 200ms ease"
+   * @default "transform 200ms var(--dv-ease, ease)"
    */
   transition?: string | false | undefined;
   /**
