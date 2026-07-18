@@ -128,7 +128,11 @@ export function useSortable<T>(
     options.a11y === false ? null : { ...DEFAULT_SORT_MESSAGES, ...options.a11y };
   const keyboardEnabled = options.keyboard !== false;
   const neighborTransition =
-    options.transition === false ? null : (options.transition ?? "transform 200ms ease");
+    // The var() falls back to plain ease, and upgrades itself when
+    // the opt-in stylesheet (which defines --dv-ease) is loaded.
+    options.transition === false
+      ? null
+      : (options.transition ?? "transform 200ms var(--dv-ease, ease)");
 
   const active = shallowRef<ActiveSort | null>(null);
   const isSorting = computed(() => active.value !== null);

@@ -52,7 +52,7 @@ export default defineConfig({
   run: {
     tasks: {
       dev: { command: "vp dev -c vite.config.playground.ts", cache: false },
-      build: ["vp build", "tsc -p tsconfig.build.json"],
+      build: ["vp build", "tsc -p tsconfig.build.json", "node scripts/copyStyles.mjs"],
       check: ["vp check", "vize check"],
       "check:fmt": "vp check --no-lint",
       "check:oxlint": "vp check --no-fmt",
