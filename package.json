@@ -36,7 +36,8 @@
     },
     "./styles.css": "./dist/styles/index.css",
     "./styles/core.css": "./dist/styles/core.css",
-    "./styles/lift.css": "./dist/styles/lift.css"
+    "./styles/lift.css": "./dist/styles/lift.css",
+    "./styles/spring.css": "./dist/styles/spring.css"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
