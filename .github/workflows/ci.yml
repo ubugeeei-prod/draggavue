@@ -102,26 +102,58 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - run: pnpm exec vp run musea:build
+
+      # Real deploy when the Cloudflare secrets exist; the artifact
+      # below stays as a fallback and an archived copy either way.
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "url=" >> "$GITHUB_OUTPUT"
+            echo "Cloudflare secrets not configured — using the artifact fallback."
+            exit 0
+          fi
+          pnpm dlx wrangler pages project create draggavue-musea \
+            --production-branch main > /dev/null 2>&1 || true
+          pnpm dlx wrangler pages deploy dist-musea \
+            --project-name draggavue-musea --branch "pr-$PR" --commit-dirty=true
+          echo "url=https://pr-$PR.draggavue-musea.pages.dev/__musea__/" >> "$GITHUB_OUTPUT"
+
       - uses: actions/upload-artifact@v4
         id: gallery
         with:
           name: musea-preview
           path: dist-musea
           retention-days: 14
+
       - name: Pin the preview link on the PR
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
-          URL: ${{ steps.gallery.outputs.artifact-url }}
+          DEPLOY_URL: ${{ steps.deploy.outputs.url }}
+          ARTIFACT_URL: ${{ steps.gallery.outputs.artifact-url }}
         run: |
           marker="<!-- musea-preview -->"
-          body="$marker
+          if [ -n "$DEPLOY_URL" ]; then
+            body="$marker
           ### 🖼 Musea preview
 
-          - [Download the static gallery]($URL), unzip, then \`npx serve .\` and open \`/__musea__/\`
+          **[Open the gallery]($DEPLOY_URL)** — deployed for this PR, updated on every push.
+
+          <sub>[Artifact copy]($ARTIFACT_URL) · or run \`vp run musea\` on the branch.</sub>"
+          else
+            body="$marker
+          ### 🖼 Musea preview
+
+          - [Download the static gallery]($ARTIFACT_URL), unzip, then \`npx serve .\` and open \`/__musea__/\`
           - Or run it live from this branch: \`vp run musea\`
 
-          _Rebuilt on every push — the link always points at the latest run._"
+          <sub>Set the \`CLOUDFLARE_API_TOKEN\` / \`CLOUDFLARE_ACCOUNT_ID\` repo secrets and this comment becomes a live URL.</sub>"
+          fi
           existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
             --jq "[.[] | select(.body | startswith(\"$marker\"))][0].id")
           if [ -n "$existing" ] && [ "$existing" != "null" ]; then
