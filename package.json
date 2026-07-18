@@ -43,6 +43,7 @@
     "@vizejs/vite-plugin": "^0.291.0",
     "typescript": "^5.9.3",
     "vite-plus": "^0.2.5",
+    "vitest": "^4.1.10",
     "vize": "^0.291.0",
     "vue": "^3.5.40",
     "vue-tsc": "^3.3.7"
