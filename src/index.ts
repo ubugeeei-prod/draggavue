@@ -27,8 +27,14 @@ export {
   release,
   resolveDelta,
 } from "./draggable/drag";
+export type {
+  DraggableComponent,
+  DraggableExposed,
+  DraggableProps,
+  DraggableSlotProps,
+} from "./draggable/Draggable";
+export { Draggable } from "./draggable/Draggable";
 export type { DragA11yOptions, DraggableAttrs } from "./draggable/dragA11y";
-export { default as Draggable } from "./draggable/Draggable.vue";
 export type {
   DraggableCallbacks,
   DraggableStyle,
@@ -46,7 +52,13 @@ export {
   shiftFor,
   targetIndexOf,
 } from "./sortable/sortable";
-export { default as SortableList } from "./sortable/SortableList.vue";
+export type {
+  SortableListComponent,
+  SortableListExposed,
+  SortableListItemSlotProps,
+  SortableListProps,
+} from "./sortable/SortableList";
+export { SortableList } from "./sortable/SortableList";
 export type {
   SortableItemA11y,
   SortableItemAttrs,

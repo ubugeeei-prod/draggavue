@@ -31,27 +31,17 @@
       "default": "./dist/index.js"
     }
   },
-  "scripts": {
-    "build": "vp build && vue-tsc -p tsconfig.build.json",
-    "check": "vp check && vize check",
-    "dev": "vp dev -c vite.config.playground.ts",
-    "fmt": "vp fmt",
-    "lint": "vize lint src",
-    "ready": "vp check --fix && vize check && vize lint src && vp test --run && pnpm run build",
-    "test": "vp test --run"
-  },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "@vizejs/vite-plugin": "^0.291.0",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite-plus": "^0.2.5",
     "vitest": "^4.1.10",
     "vize": "^0.291.0",
-    "vue": "^3.5.40",
-    "vue-tsc": "^3.3.7"
+    "vue": "^3.5.40"
   },
   "peerDependencies": {
     "vue": "^3.5.0"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@11.14.0"
 }
