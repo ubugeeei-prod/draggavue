@@ -28,6 +28,7 @@ export {
   resolveDelta,
 } from "./draggable/drag";
 export type { DragA11yOptions, DraggableAttrs } from "./draggable/dragA11y";
+export { default as Draggable } from "./draggable/Draggable.vue";
 export type {
   DraggableCallbacks,
   DraggableStyle,
