@@ -65,4 +65,55 @@ export interface DraggableComponent {
 
 // --- Implementation ---
 
+/**
+ * Headless draggable component — {@link useDraggable} without
+ * writing a composable call.
+ *
+ * Renders a single root element (`tag`, default `div`) with the
+ * transform, ARIA attributes, and keyboard handling already bound.
+ * Everything visual stays yours: style the element, use the
+ * `data-dragging` attribute for drag-state looks, and read the slot
+ * props for richer rendering.
+ *
+ * Two ownership modes:
+ *
+ * - **Uncontrolled** — pass `initial-position` (or nothing) and the
+ *   component keeps its own position.
+ * - **Controlled** — pass `position` and update it from
+ *   `@update:position`; the parent owns the state and may reject or
+ *   transform moves.
+ *
+ * @example Uncontrolled, with drag-state styling
+ * ```vue
+ * <Draggable v-slot="{ isDragging }" class="card" bounds="parent">
+ *   {{ isDragging ? "…" : "Drag me" }}
+ * </Draggable>
+ *
+ * <style scoped>
+ * .card[data-dragging="true"] {
+ *   box-shadow: var(--shadow-lift);
+ * }
+ * </style>
+ * ```
+ *
+ * @example Controlled
+ * ```vue
+ * <script setup lang="ts">
+ * import { shallowRef } from "vue";
+ * import { Draggable, ORIGIN, type Position } from "draggavue";
+ *
+ * const position = shallowRef<Position>(ORIGIN);
+ * </script>
+ *
+ * <template>
+ *   <Draggable
+ *     :position="position"
+ *     @update:position="(next) => (position = next)"
+ *   />
+ * </template>
+ * ```
+ *
+ * @see {@link useDraggable} when you need handles, controlled refs,
+ * or custom roots.
+ */
 export const Draggable: DraggableComponent = DraggableImpl as unknown as DraggableComponent;

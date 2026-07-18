@@ -11,9 +11,28 @@ import type { DragState, DragTransition } from "./drag";
 // --- Types & Signatures ---
 
 export type DragA11yOptions = {
-  /** Override or disable assistive-technology messages. */
+  /**
+   * Override or disable assistive-technology messages. A partial
+   * object merges over {@link DEFAULT_MESSAGES}, so localizing just
+   * one string is fine; `false` silences announcements entirely.
+   *
+   * @default DEFAULT_MESSAGES
+   * @example
+   * ```ts
+   * useDraggable(box, {
+   *   a11y: { grabbed: (p) => `つかみました (${p.x}, ${p.y})` },
+   * });
+   * ```
+   */
   a11y?: Partial<DragA11yMessages> | false | undefined;
-  /** Tune arrow-key steps, or `false` to opt out of keyboard dragging. */
+  /**
+   * Tune arrow-key steps, or `false` to opt out of keyboard
+   * dragging — which also removes the `role` / `tabindex`
+   * affordances so the element stops advertising an interaction it
+   * would not honor.
+   *
+   * @default { step: px(10), fineStep: px(1) }
+   */
   keyboard?: boolean | Partial<KeyboardSteps> | undefined;
 };
 

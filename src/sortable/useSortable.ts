@@ -61,9 +61,64 @@ const REST_CONSTRAINTS: DragConstraints = {
 /**
  * Accessible list reordering on top of the drag state machine.
  *
- * One delegated listener set on the container drives any number of
- * items; geometry is captured once per session and every per-frame
- * decision happens in pure code.
+ * Fully headless and controlled: you render the list with `v-for`,
+ * bind {@link UseSortableReturn.itemAttrs} and
+ * {@link UseSortableReturn.itemStyle} to each item, and apply the
+ * reordered array when {@link UseSortableOptions.onReorder} hands
+ * it to you. The composable never mutates your data.
+ *
+ * Interaction model:
+ *
+ * - **Pointer** — press an item and move along the main axis; the
+ *   target slot follows the passed item centers, and neighbors
+ *   shift out of the way with a transition.
+ * - **Keyboard** — focus an item, grab with Space/Enter, step with
+ *   the arrow keys (clamped at the edges), drop with Space/Enter,
+ *   cancel with Escape. Every step is announced with 1-based
+ *   positions.
+ *
+ * Performance notes: **one** delegated listener set on the
+ * container drives any number of items (no per-item listeners),
+ * geometry is captured once per session, and every per-frame
+ * decision is pure arithmetic over that snapshot.
+ *
+ * @param container - The list container element; items are its
+ * direct children carrying the attributes from `itemAttrs`.
+ * @param options - Data source, reorder sink, constraints, a11y,
+ * and lifecycle callbacks. See {@link UseSortableOptions}.
+ * @returns The live session plus per-item binding helpers. See
+ * {@link UseSortableReturn}.
+ *
+ * @example A minimal sortable list
+ * ```vue
+ * <script setup lang="ts">
+ * import { ref, useTemplateRef } from "vue";
+ * import { useSortable } from "draggavue";
+ *
+ * const items = ref(["Overture", "Interlude", "Finale"]);
+ * const list = useTemplateRef<HTMLElement>("list");
+ *
+ * const sortable = useSortable(list, {
+ *   items: () => items.value,
+ *   onReorder: (next) => {
+ *     items.value = [...next];
+ *   },
+ * });
+ * </script>
+ *
+ * <template>
+ *   <ul ref="list">
+ *     <li
+ *       v-for="(item, index) in items"
+ *       :key="item"
+ *       v-bind="sortable.itemAttrs(index)"
+ *       :style="sortable.itemStyle(index)"
+ *     >
+ *       {{ item }}
+ *     </li>
+ *   </ul>
+ * </template>
+ * ```
  */
 export function useSortable<T>(
   container: ElementTarget,
