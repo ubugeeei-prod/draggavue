@@ -34,12 +34,14 @@
   "scripts": {
     "build": "vp build && vue-tsc -p tsconfig.build.json",
     "check": "vp check && vize check",
+    "dev": "vp dev -c vite.config.playground.ts",
     "fmt": "vp fmt",
     "lint": "vize lint src",
     "ready": "vp check --fix && vize check && vize lint src && vp test --run && pnpm run build",
     "test": "vp test --run"
   },
   "devDependencies": {
+    "@types/node": "^26.1.1",
     "@vizejs/vite-plugin": "^0.291.0",
     "typescript": "^5.9.3",
     "vite-plus": "^0.2.5",
