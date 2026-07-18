@@ -6,7 +6,7 @@
 // production bundler would. Budgets are hard limits — the script
 // exits non-zero when any entry crosses its line.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import process from "node:process";
 import { gzipSync } from "node:zlib";
 import { build } from "esbuild";
@@ -72,7 +72,9 @@ for (const entry of ENTRIES) {
   });
 }
 
-const styles = readdirSync("dist/styles").filter((file) => file.endsWith(".css"));
+const styles = existsSync("dist/styles")
+  ? readdirSync("dist/styles").filter((file) => file.endsWith(".css"))
+  : [];
 const styleTotal = styles.reduce(
   (total, file) => total + gzipSize(readFileSync(`dist/styles/${file}`)),
   0,
