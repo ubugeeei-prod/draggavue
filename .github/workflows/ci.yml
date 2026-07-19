@@ -219,6 +219,11 @@ jobs:
           find . -maxdepth 1 ! -name . ! -name .git ! -name .nojekyll ! -name 'pr-*' -exec rm -rf {} +
           cp -R "$GITHUB_WORKSPACE/dist-musea/draggavue/." .
           printf '<!doctype html>\n<meta http-equiv="refresh" content="0; url=/draggavue/__musea__/" />\n<title>draggavue</title>\n' > index.html
+          # Musea is a history-router SPA: deep links (component pages)
+          # have no static file. GitHub Pages serves 404.html for any
+          # miss, so shipping the app shell there lets those URLs boot
+          # the gallery and restore their route.
+          cp __musea__/index.html 404.html
           touch .nojekyll
           git add -A
           git commit -m "musea: main after pr-$PR" || echo "nothing to publish"
