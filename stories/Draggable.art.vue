@@ -14,153 +14,217 @@ const GRID: Grid = [px(24), px(24)];
 
 <art>
   <variant name="Basic" default>
-    <Draggable class="card">
+    <p class="hint">Drag anywhere. Or focus it — <kbd>Space</kbd>, arrows, <kbd>Space</kbd>.</p>
+    <Draggable class="track">
       <span class="grip" aria-hidden="true"></span>
-      Drag me — pointer, or Space + arrows
+      <span class="name">Overture</span>
+      <span class="time">3:12</span>
     </Draggable>
   </variant>
 
   <variant name="Multiple draggables">
-    <div class="row">
-      <Draggable class="card tone-a">
+    <p class="hint">Each card is its own session — try two fingers on touch.</p>
+    <div class="loose">
+      <Draggable class="track">
         <span class="grip" aria-hidden="true"></span>
-        One
+        <span class="name">Overture</span>
+        <span class="time">3:12</span>
       </Draggable>
-      <Draggable class="card tone-b">
+      <Draggable class="track">
         <span class="grip" aria-hidden="true"></span>
-        Two
+        <span class="name">Interlude</span>
+        <span class="time">1:47</span>
       </Draggable>
-      <Draggable class="card tone-c">
+      <Draggable class="track">
         <span class="grip" aria-hidden="true"></span>
-        Three
+        <span class="name">Finale</span>
+        <span class="time">5:21</span>
       </Draggable>
     </div>
   </variant>
 
   <variant name="Spring settle">
-    <p class="hint">Drag anywhere, then press <kbd>Esc</kbd> — it springs home.</p>
-    <Draggable class="card">
+    <p class="hint">Throw it somewhere, then press <kbd>Esc</kbd> — it springs home.</p>
+    <Draggable class="track">
       <span class="grip" aria-hidden="true"></span>
-      Throw me, cancel me
+      <span class="name">Crescendo</span>
+      <span class="time">4:05</span>
     </Draggable>
   </variant>
 
   <variant name="Inside parent bounds">
-    <div class="stage">
-      <Draggable class="card" bounds="parent">
+    <div class="desk">
+      <Draggable class="track" bounds="parent">
         <span class="grip" aria-hidden="true"></span>
-        Bounded
+        <span class="name">Bounded</span>
+        <span class="time">0:58</span>
       </Draggable>
     </div>
   </variant>
 
   <variant name="X axis only">
-    <Draggable class="card" axis="x">
-      <span class="grip" aria-hidden="true"></span>
-      Slides horizontally
-    </Draggable>
+    <div class="rail">
+      <Draggable class="track" axis="x" bounds="parent">
+        <span class="grip" aria-hidden="true"></span>
+        <span class="name">Slides on x</span>
+      </Draggable>
+    </div>
   </variant>
 
   <variant name="Snap to a 24px grid">
-    <div class="stage dotted">
-      <Draggable class="card" :grid="GRID" bounds="parent">
+    <div class="desk dotted">
+      <Draggable class="track" :grid="GRID" bounds="parent">
         <span class="grip" aria-hidden="true"></span>
-        Snaps in steps
+        <span class="name">Snaps</span>
       </Draggable>
     </div>
   </variant>
 
   <variant name="Activation distance">
-    <Draggable class="card" :activation-distance="12">
+    <p class="hint">Needs 12px of travel first — clicks inside stay clicks.</p>
+    <Draggable class="track" :activation-distance="12">
       <span class="grip" aria-hidden="true"></span>
-      Needs 12px of intent
+      <span class="name">Deliberate</span>
+      <span class="time">2:33</span>
     </Draggable>
   </variant>
 </art>
 
 <style scoped>
-.art-preview {
-  --ink: oklch(0.32 0.02 265);
-  --ink-soft: oklch(0.55 0.02 265);
-  --line: oklch(0.91 0.01 265);
-  --paper: oklch(0.995 0 0);
-  --accent: oklch(0.58 0.17 275);
+.musea-variant {
+  /*
+   * Ink on paper. Every value hangs off two decisions:
+   *
+   * ink is a near-black with a whisper of blue-violet (hue 272) —
+   * pure gray reads as dead on screens, and the cool cast keeps
+   * the demo neutral next to any brand color. paper sits at
+   * L 0.985, not white: the cards need somewhere brighter to go.
+   *
+   * accent shares the ink's hue family (265) so it reads as "the
+   * same light, brighter" — it appears only when the system is
+   * responding to your hand.
+   */
+  --ink: oklch(0.28 0.022 272);
+  --ink-2: oklch(0.51 0.02 272);
+  --line: oklch(0.9 0.008 272);
+  --line-hover: oklch(0.82 0.012 272);
+  --paper: oklch(0.985 0.002 272);
+  --card: oklch(1 0 0);
+  --accent: oklch(0.54 0.19 265);
 
-  padding: 1.5rem;
+  padding: 24px;
+  background: var(--paper);
   color: var(--ink);
+
+  /* System stack: the demo shows the library inside *your* app,
+   * so it must not bring a voice of its own. 13px — tool-sized
+   * text, one step below prose. */
   font:
-    500 0.85rem/1.4 ui-sans-serif,
+    500 13px/1.5 ui-sans-serif,
     system-ui,
     sans-serif;
 }
 
-.card {
-  display: inline-flex;
-  gap: 0.6rem;
+.track {
+  /* inline-grid: the card hugs its content — a draggable should
+   * look holdable, and full-width slabs don't. Columns: grip,
+   * name (flexible), time. */
+  display: inline-grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
   align-items: center;
-  padding: 0.7rem 1.1rem;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: var(--paper);
-  letter-spacing: 0.01em;
+  min-width: 200px;
+  padding: 10px 14px;
 
+  /* The border is the boundary of what your hand owns: 1px of
+   * function, not decoration. It is also the only hover response —
+   * anything that *moves* on hover makes the target feel like it's
+   * escaping the grab. */
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  transition: border-color 160ms cubic-bezier(0.2, 0, 0, 1);
+
+  &:hover {
+    border-color: var(--line-hover);
+  }
+
+  /* While held, the boundary lights up in the accent: "this is in
+   * your hand now". The shadow and scale come from lift.css. */
   &[data-dragging="true"] {
-    border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+    border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
   }
 }
 
 .grip {
-  width: 4px;
-  height: 16px;
-  border-inline: 2px dotted var(--ink-soft);
-  opacity: 0.7;
+  /* Six dots — the drag glyph screen readers skip and every hand
+   * recognizes. Drawn with dotted borders so it inherits currentColor
+   * and needs no asset. */
+  width: 3px;
+  height: 14px;
+  border-inline: 2px dotted var(--ink-2);
+  opacity: 0.65;
 }
 
-.row {
+.name {
+  letter-spacing: 0.01em;
+}
+
+.time {
+  color: var(--ink-2);
+
+  /* Coordinates and durations change while things move — tabular
+   * digits keep the card's width from trembling. */
+  font-variant-numeric: tabular-nums;
+}
+
+.loose {
   display: flex;
-  gap: 0.9rem;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
-.tone-a {
-  background: color-mix(in oklab, var(--accent) 7%, var(--paper));
-}
-
-.tone-b {
-  background: color-mix(in oklab, oklch(0.7 0.14 160) 9%, var(--paper));
-}
-
-.tone-c {
-  background: color-mix(in oklab, oklch(0.75 0.13 60) 10%, var(--paper));
-}
-
-.stage {
-  height: 11rem;
+.desk {
+  /* A bounded stage is drawn dashed: the convention for "limits,
+   * not walls" — content may touch it, nothing may pass it. */
+  height: 176px;
   overflow: hidden;
+  padding: 12px;
   border: 1px dashed var(--line);
-  border-radius: 16px;
-  background: color-mix(in oklab, var(--paper) 60%, oklch(0.97 0.005 265));
+  border-radius: 12px;
 }
 
-.stage .card {
-  margin: 0.75rem;
+.rail {
+  /* One-axis variant gets a one-axis stage: a strip as tall as the
+   * card plus breathing room, so the constraint is visible before
+   * the first drag. */
+  overflow: hidden;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
 }
 
 .dotted {
+  /* The grid the card snaps to, shown honestly: dots at the exact
+   * 24px pitch of the constraint, faint enough to be furniture. */
   background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
 .hint {
-  margin: 0 0 0.75rem;
-  color: var(--ink-soft);
+  margin: 0 0 12px;
+  color: var(--ink-2);
   font-weight: 400;
 
   & kbd {
-    padding: 0.1em 0.45em;
+    padding: 1px 6px;
     border: 1px solid var(--line);
+
+    /* The thicker bottom edge is the entire keycap metaphor —
+     * one border-width instead of a gradient. */
     border-bottom-width: 2px;
-    border-radius: 6px;
-    background: var(--paper);
+    border-radius: 5px;
+    background: var(--card);
     font: inherit;
   }
 }

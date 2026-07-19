@@ -80,7 +80,7 @@ export interface UseSortableOptions<T> {
    * stylesheet upgrades the easing automatically; without it the
    * `var()` falls back to plain `ease`.
    *
-   * @default "transform 200ms var(--dv-ease, ease)"
+   * @default "transform 180ms var(--dv-ease, ease)"
    */
   transition?: string | false | undefined;
   /**
