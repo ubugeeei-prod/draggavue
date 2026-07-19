@@ -9,8 +9,11 @@ import { defineConfig } from "vite-plus";
 const MUSEA = process.env["DRAGGAVUE_MUSEA"] === "1";
 
 // Where the static gallery will be served from. CI sets this to
-// the GitHub Pages subdirectory of the PR (e.g. /draggavue/pr-12/)
-// so assets and the SPA router agree on their prefix.
+// the GitHub Pages subdirectory (e.g. /draggavue/pr-12/). It goes
+// through Vite's `base`, NOT through musea's basePath: the chunk
+// preloader resolves `assets/*` against `base`, so only this split
+// keeps gallery URLs and asset URLs on the same prefix. Musea joins
+// the two into its public base itself.
 const MUSEA_BASE = process.env["DRAGGAVUE_MUSEA_BASE"] ?? "/";
 
 // Second library pass: the same SFCs compiled by Vize's Vapor
@@ -18,12 +21,13 @@ const MUSEA_BASE = process.env["DRAGGAVUE_MUSEA_BASE"] ?? "/";
 const VAPOR = process.env["DRAGGAVUE_VAPOR"] === "1";
 
 export default defineConfig({
+  base: MUSEA ? MUSEA_BASE : "/",
   plugins: MUSEA
     ? [
         vize(),
         musea({
           include: ["stories/**/*.art.vue"],
-          basePath: `${MUSEA_BASE.replace(/\/$/, "")}/__musea__`,
+          basePath: "/__musea__",
         }),
       ]
     : [vize(VAPOR ? { vapor: true } : {})],

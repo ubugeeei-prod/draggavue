@@ -11,10 +11,16 @@
 // file behind it, which the SPA 404 fallback then answers with the
 // gallery shell — musea nested inside its own preview.
 //
+// The doubling happens regardless of how the subpath reaches musea:
+// passing it inside `basePath` directly, or (our setup) via Vite's
+// `base`, which musea joins into its public base before the same
+// rewrite runs. Either way the baked URLs come out as
+// `<prefix><prefix>/__musea__/…`.
+//
 // This script undoes the double application: in every text asset it
-// rewrites `<prefix><basePath>/` back to `<basePath>/`, where prefix
-// is the subpath portion of DRAGGAVUE_MUSEA_BASE. Remove it once
-// vize#3109 ships.
+// rewrites `<prefix>/__musea__/` prefixed once more with `<prefix>`
+// back to the single form, where prefix is the subpath portion of
+// DRAGGAVUE_MUSEA_BASE. Remove it once vize#3109 ships.
 
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";

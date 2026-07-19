@@ -120,7 +120,9 @@ jobs:
           git worktree add -B gh-pages /tmp/pages origin/gh-pages
           rm -rf "/tmp/pages/pr-$PR"
           mkdir -p "/tmp/pages/pr-$PR"
-          cp -R "dist-musea/draggavue/pr-$PR/." "/tmp/pages/pr-$PR/"
+          # dist-musea is site-root shaped: __musea__/ + assets/ +
+          # a redirecting index.html. Ship all of it.
+          cp -R "dist-musea/." "/tmp/pages/pr-$PR/"
           touch /tmp/pages/.nojekyll
           cd /tmp/pages
           git add -A
@@ -217,8 +219,9 @@ jobs:
           cd /tmp/pages
           rm -rf "pr-$PR"
           find . -maxdepth 1 ! -name . ! -name .git ! -name .nojekyll ! -name 'pr-*' -exec rm -rf {} +
-          cp -R "$GITHUB_WORKSPACE/dist-musea/draggavue/." .
-          printf '<!doctype html>\n<meta http-equiv="refresh" content="0; url=/draggavue/__musea__/" />\n<title>draggavue</title>\n' > index.html
+          # dist-musea is site-root shaped: __musea__/ + assets/ + a
+          # redirecting index.html emitted by musea itself.
+          cp -R "$GITHUB_WORKSPACE/dist-musea/." .
           # Musea is a history-router SPA: deep links (component pages)
           # have no static file. GitHub Pages serves 404.html for any
           # miss, so shipping the app shell there lets those URLs boot
