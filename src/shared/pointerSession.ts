@@ -78,6 +78,8 @@ export const createPointerSession: createPointerSession = (handlers) => {
   };
 
   const begin = (): void => {
+    // Self-cleaning: beginning again first tears the old session
+    // down, so a missed `end()` can never stack listeners.
     end();
     controller = new AbortController();
     const { signal } = controller;

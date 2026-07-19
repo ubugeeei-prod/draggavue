@@ -228,11 +228,14 @@ export function useDraggable(
   }
 
   function applyTransition(transition: DragTransition): void {
+    // Order matters here: commit the state, tear down while nothing
+    // can throw, announce, and only then run user callbacks — a
+    // throwing callback must never leak window listeners.
     state.value = transition.state;
-    // Tear down before user callbacks run so a throwing callback can
-    // never leak window listeners.
     if (transition.state.status === "idle") endSession();
+
     a11y.announceTransition(transition);
+
     switch (transition.effect) {
       case "none":
         return;
@@ -256,8 +259,10 @@ export function useDraggable(
   function onPointerDown(event: PointerEvent): void {
     if (isDisabled() || event.button !== 0) return;
     if (state.value.status !== "idle") return;
+
     constraints = resolveConstraints(target, options, settled.value);
     pointerSession.begin();
+
     applyTransition(
       press(state.value, event.pointerId, settled.value, pointFromEvent(event), constraints),
     );
@@ -283,7 +288,10 @@ export function useDraggable(
       getState: () => state.value,
       isDisabled,
       grab: () => {
+        // The idle guard is the mutual exclusion with pointer
+        // sessions: a keyboard grab may never steal a live drag.
         if (state.value.status !== "idle") return;
+
         constraints = resolveConstraints(target, options, settled.value);
         applyTransition(grab(state.value, settled.value));
       },
@@ -307,19 +315,22 @@ export function useDraggable(
     handleElement,
     (element, _previous, onCleanup) => {
       if (element === null) return;
-      const controller = new AbortController();
+
       // Widening to GlobalEventHandlers keeps the typed event
       // overloads across the HTMLElement | SVGElement union.
+      const controller = new AbortController();
       const listenerTarget: GlobalEventHandlers = element;
       const { signal } = controller;
       listenerTarget.addEventListener("pointerdown", onPointerDown, { signal });
       listenerTarget.addEventListener("keydown", a11y.onKeydown, { signal });
       listenerTarget.addEventListener("focusout", a11y.onFocusout, { signal });
+
       // Without this, mobile browsers claim the gesture for scrolling
       // before the drag can activate.
       const elementStyle = element.style;
       const previousTouchAction = elementStyle.touchAction;
       elementStyle.touchAction = "none";
+
       onCleanup(() => {
         controller.abort();
         elementStyle.touchAction = previousTouchAction;

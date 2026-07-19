@@ -180,11 +180,15 @@ export function useSortable<T>(
   function beginMeasured(index: number): boolean {
     const containerElement = toValue(container);
     if (containerElement === null || containerElement === undefined) return false;
+
+    // Items are found by their delegation index, not DOM order —
+    // robust against wrappers and mid-flight reorders.
     const elements: Element[] = [];
     for (const element of containerElement.querySelectorAll(":scope > [data-draggavue-index]")) {
       elements[Number(element.getAttribute("data-draggavue-index"))] = element;
     }
     if (elements.length === 0) return false;
+
     const orientation = toValue(options.orientation) ?? "vertical";
     layout = layoutFromRects(elements.map(measureRect), orientation, index);
     constraints = {
@@ -192,14 +196,18 @@ export function useSortable<T>(
       axis: orientation === "vertical" ? "y" : "x",
       activationDistance: px(toValue(options.activationDistance) ?? 0),
     };
+
     reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     pendingFrom = index;
     return true;
   }
 
   function applyTransition(transition: DragTransition): void {
+    // Same discipline as useDraggable: state first, teardown while
+    // nothing can throw, then user-visible effects.
     state = transition.state;
     if (state.status === "idle") endSession();
+
     switch (transition.effect) {
       case "none":
         return;
@@ -270,8 +278,12 @@ export function useSortable<T>(
     const containerElement = toValue(container);
     if (containerElement === null || containerElement === undefined) return null;
     if (!isElement(event.target)) return null;
+
+    // The parent check scopes delegation to *this* list — without
+    // it, a nested sortable's items would answer to both.
     const item = event.target.closest("[data-draggavue-index]");
     if (item === null || item.parentElement !== containerElement) return null;
+
     const index = Number(item.getAttribute("data-draggavue-index"));
     return Number.isInteger(index) ? index : null;
   }
@@ -280,6 +292,7 @@ export function useSortable<T>(
     if (isDisabled() || event.button !== 0 || state.status !== "idle") return;
     const index = indexFromEvent(event);
     if (index === null || !beginMeasured(index)) return;
+
     pointerSession.begin();
     applyTransition(press(state, event.pointerId, ORIGIN, pointFromEvent(event), constraints));
   }
@@ -288,10 +301,14 @@ export function useSortable<T>(
     if (!keyboardEnabled || isDisabled()) return;
     const index = indexFromEvent(event);
     if (index === null) return;
+
     const grabbed = state.status === "dragging" && state.source === "keyboard";
     const intent = intentFromKey(event.key, event.shiftKey, grabbed, DEFAULT_STEPS);
     if (intent.kind === "none") return;
+
+    // Tab cancels but must keep moving focus naturally.
     if (event.key !== "Tab") event.preventDefault();
+
     switch (intent.kind) {
       case "grab":
         if (state.status !== "idle" || !beginMeasured(index)) return;
@@ -312,6 +329,9 @@ export function useSortable<T>(
   function keyboardStep(delta: Delta): void {
     const current = active.value;
     if (current === null || layout === null) return;
+
+    // Resolve the target slot first; edge clamping can make the
+    // whole step a no-op, and a no-op must not announce.
     const step = indexStepOf(delta, layout.orientation);
     const to = Math.min(Math.max(current.to + step, 0), layout.centers.length - 1);
     const fromCenter = layout.centers[current.from];
@@ -319,12 +339,16 @@ export function useSortable<T>(
     if (step === 0 || to === current.to || fromCenter === undefined || toCenter === undefined) {
       return;
     }
+
+    // Feed the *difference* to the state machine — its delta is
+    // cumulative, while `offset` here is absolute from the origin.
     const offset = px(toCenter - fromCenter);
     const move: Delta =
       layout.orientation === "vertical"
         ? { dx: px(0), dy: px(offset - current.offset) }
         : { dx: px(offset - current.offset), dy: px(0) };
     applyTransition(moveBy(state, move, constraints));
+
     active.value = { from: current.from, to, offset };
     say(messages && messages.moved(to + 1, total()));
     options.onSortMove?.({ from: current.from, to });
@@ -338,12 +362,16 @@ export function useSortable<T>(
     computed(() => toValue(container) ?? null),
     (element, _previous, onCleanup) => {
       if (element === null) return;
+
+      // One delegated listener set on the container serves every
+      // item — adding and removing items costs nothing here.
       const controller = new AbortController();
       const listenerTarget: GlobalEventHandlers = element;
       const { signal } = controller;
       listenerTarget.addEventListener("pointerdown", onPointerDown, { signal });
       listenerTarget.addEventListener("keydown", onKeydown, { signal });
       listenerTarget.addEventListener("focusout", onFocusout, { signal });
+
       onCleanup(() => {
         controller.abort();
       });
