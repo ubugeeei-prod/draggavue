@@ -115,7 +115,15 @@ export default defineConfig({
       "test:browser": "vp test --run --project browser",
       "test:vapor": "vp test --run --project vapor",
       musea: { command: "env DRAGGAVUE_MUSEA=1 vize musea serve", cache: false },
-      "musea:build": { command: "env DRAGGAVUE_MUSEA=1 vize musea serve --build", cache: false },
+      "musea:build": {
+        // The fixup collapses a doubled base prefix in the static
+        // output — see scripts/fixMuseaBase.mjs for the upstream bug.
+        command: [
+          "env DRAGGAVUE_MUSEA=1 vize musea serve --build",
+          "node scripts/fixMuseaBase.mjs",
+        ],
+        cache: false,
+      },
       size: "node scripts/size.mjs",
       release: { command: "node scripts/release.mjs", cache: false },
       ready: ["vp check --fix", "vize check", "vize lint src", "vp test --run", "vp run build"],
