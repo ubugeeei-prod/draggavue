@@ -1,76 +1,124 @@
 /**
- * draggavue/styles/lift.css — opt-in motion.
+ * draggavue/styles/lift.css — the physics layer.
  *
- * The dragged element rises on a four-layer shadow — a hairline, a
- * contact shadow, and two soft ambient layers — with a whisper of
- * scale. Lifting uses the individual `scale` property, so it never
- * fights the library's `transform: translate3d` positioning.
+ * Design model: a sheet of paper lifting off a desk. Physically,
+ * lifting produces exactly three optical events, and every rule in
+ * this file maps to one of them:
  *
- * Two easings define the feel:
+ *   1. the sheet's edge separates from the ground   → hairline ring
+ *   2. the contact shadow softens as height grows   → close shadows
+ *   3. an ambient occlusion shadow stretches out    → far shadow
  *
- *   --dv-ease         easeOutQuint — quick, confident, settles fast
- *   --dv-ease-spring  a linear() spring with a single ~5% overshoot
- *                     for the moment of release
+ * Nothing here invents an effect the metaphor doesn't supply — no
+ * glows, no tints, no borders. When the metaphor runs out, the
+ * styling stops.
  *
- * The spring animates `transform` only while NOT dragging, which
- * yields: instant 1:1 tracking during the drag, and a soft spring
- * home on cancel (Escape), reset(), and controlled snaps.
+ * Motion follows the same physics:
+ *
+ *   --dv-ease         cubic-bezier(0.2, 0, 0, 1). Lifting is a
+ *                     *response* to the hand: ~80% of the change
+ *                     lands inside the first 100ms (the threshold
+ *                     under which humans read "instantaneous"),
+ *                     then eases out so the eye never sees a stop.
+ *   --dv-ease-spring  a linear() spring for the release. A real
+ *                     object leaving your hand settles by damped
+ *                     oscillation; one ~5% overshoot is the
+ *                     smallest cue that reads as mass. Bigger
+ *                     bounces read as toys — that flavor lives in
+ *                     spring.css, deliberately opt-in.
+ *
+ * The spring drives `transform` only while NOT dragging. This split
+ * is the core trick of the file: tracking stays 1:1 under the
+ * pointer (no easing may ever sit between hand and paper), while
+ * cancel (Escape), reset(), and controlled snaps get the spring.
  *
  * Custom properties:
  *   --dv-lift-scale       default 1.015
- *   --dv-lift-shadow      default: layered (see below)
- *   --dv-lift-duration    default 180ms
- *   --dv-settle-duration  default 500ms
+ *   --dv-lift-shadow      default: the three-event stack below
+ *   --dv-lift-duration    default 160ms
+ *   --dv-settle-duration  default 480ms
  *
- * Everything respects prefers-reduced-motion.
+ * prefers-reduced-motion collapses all of it to instant state
+ * changes — the states remain, only the interpolation goes.
  */
 
 :where([data-draggavue], [data-draggavue-index]) {
-  --dv-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dv-ease: cubic-bezier(0.2, 0, 0, 1);
   --dv-ease-spring: linear(
     0,
-    0.36 6%,
-    0.72 12%,
-    0.925 17.6%,
-    1.026 23.5%,
-    1.056 29.5%,
-    1.05 33%,
-    1.018 42.4%,
-    0.998 53.5%,
-    0.9962 60.9%,
-    1.0006 76.4%,
+    0.315 5.8%,
+    0.622 11.6%,
+    0.845 17.4%,
+    0.983 23.4%,
+    1.043 29.6%,
+    1.05 34%,
+    1.031 40.8%,
+    1.006 50.4%,
+    0.996 60.6%,
+    0.999 74.4%,
     1
   );
 
+  /* Only scale and shadow ever transition at rest — transform is
+   * reserved for the settle rule below, so a sheet at rest costs
+   * the compositor nothing. */
   transition:
-    scale var(--dv-lift-duration, 180ms) var(--dv-ease),
-    box-shadow var(--dv-lift-duration, 180ms) var(--dv-ease);
+    scale var(--dv-lift-duration, 160ms) var(--dv-ease),
+    box-shadow var(--dv-lift-duration, 160ms) var(--dv-ease);
 }
 
 :where([data-draggavue], [data-draggavue-index])[data-dragging="true"] {
+  /* 1.015: just above the ~1% Weber threshold where growth becomes
+   * perceptible, safely below the ~2% where it reads as zoom. The
+   * sheet should feel *nearer*, not *bigger*.
+   *
+   * The individual `scale` property, never `transform` — the
+   * library owns `transform` for positioning, and the two must
+   * compose without ever fighting. */
   scale: var(--dv-lift-scale, 1.015);
+
+  /* The three optical events of lifting, top to bottom:
+   *
+   *   ring    0/1px, 4%   — the separated edge (event 1)
+   *   close   1px + 6px   — the softening contact shadow (event 2)
+   *   far     24px, -12px — ambient occlusion; the wide negative
+   *                         spread pulls it inward so it stays a
+   *                         pool beneath the sheet, not a smear
+   *                         around it (event 3)
+   *
+   * Alphas descend with distance (8 → 10 → 16%) exactly as real
+   * shadow density does; neutral black, because a shipped stylesheet
+   * cannot know the consumer's background hue. */
   box-shadow: var(
     --dv-lift-shadow,
     0 0 0 1px rgb(0 0 0 / 0.04),
-    0 2px 4px rgb(0 0 0 / 0.06),
-    0 8px 20px rgb(0 0 0 / 0.1),
-    0 24px 48px -16px rgb(0 0 0 / 0.18)
+    0 1px 2px rgb(0 0 0 / 0.08),
+    0 6px 16px -4px rgb(0 0 0 / 0.1),
+    0 24px 48px -12px rgb(0 0 0 / 0.16)
   );
 }
 
 /*
- * The settle spring. Only free-drag roots get it: sortable items
- * receive their make-room transition inline from the library, and
- * springing those would double-animate.
+ * The settle. Armed only while not dragging, so it can never lag
+ * the pointer; the moment data-dragging drops, any transform change
+ * (Escape restoring the origin, reset(), a controlled snap) rides
+ * the spring home.
+ *
+ * Free-drag roots only: sortable neighbors receive their make-room
+ * transition inline from the library, and layering a second
+ * transform transition over it would double-animate them.
  */
 :where([data-draggavue]):not([data-dragging="true"]) {
   transition:
-    transform var(--dv-settle-duration, 500ms) var(--dv-ease-spring),
-    scale var(--dv-lift-duration, 180ms) var(--dv-ease),
-    box-shadow var(--dv-lift-duration, 180ms) var(--dv-ease);
+    transform var(--dv-settle-duration, 480ms) var(--dv-ease-spring),
+    scale var(--dv-lift-duration, 160ms) var(--dv-ease),
+    box-shadow var(--dv-lift-duration, 160ms) var(--dv-ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* States stay (the shadow still appears), interpolation goes.
+   * Scale is also dropped: a sudden 1.5% jump without its easing
+   * context reads as a glitch, not a lift. */
   :where([data-draggavue], [data-draggavue-index]) {
     transition: none;
   }

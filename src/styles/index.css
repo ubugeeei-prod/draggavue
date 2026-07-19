@@ -1,14 +1,18 @@
 /**
  * draggavue/styles.css — the full opt-in set.
  *
+ * Two layers with one metaphor between them — a sheet of paper on
+ * a desk:
+ *
+ *   core.css   what the hand needs before touching (cursor, focus)
+ *   lift.css   what happens while it holds (lift, settle physics)
+ *
  * Import once, anywhere:
  *
  *   import "draggavue/styles.css";
  *
- * Or pick layers individually:
- *
- *   import "draggavue/styles/core.css";  // cursors + focus ring
- *   import "draggavue/styles/lift.css";  // lift + spring settle
+ * Or pick layers individually — and see styles/spring.css for the
+ * livelier, opt-in easing preset.
  */
 
 @import "./core.css";

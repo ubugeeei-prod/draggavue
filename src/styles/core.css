@@ -1,26 +1,47 @@
 /**
- * draggavue/styles/core.css — opt-in interaction affordances.
+ * draggavue/styles/core.css — the affordance layer.
  *
- * Cursor language, tap-highlight cleanup, and a focus ring that
- * follows the user's system accent color. Selectors are wrapped in
- * :where() so their specificity is zero — any rule of yours wins.
+ * Design model: a draggable is a sheet of paper on a desk. At rest
+ * it should merely *hint* that it can be picked up; the moment of
+ * lifting belongs to lift.css. Core therefore contains only the
+ * signals a hand needs before touching anything: the cursor, and a
+ * focus ring for hands that arrive via the keyboard.
+ *
+ * Every selector sits in :where() — zero specificity, so any
+ * consumer rule wins without effort. A styling layer you have to
+ * fight is worse than none.
  *
  * Custom properties:
  *   --dv-focus-ring-width   default 2px
- *   --dv-focus-ring-color   default: system accent color
+ *   --dv-focus-ring-color   default: the OS accent color
  *   --dv-focus-ring-offset  default 3px
  */
 
 :where([data-draggavue], [data-draggavue-index]) {
+  /* The open hand: the strongest pre-touch affordance a pointer
+   * can receive, and the only one that costs zero pixels. */
   cursor: grab;
+
+  /* Mobile tap flashes read as "button pressed". A drag is not a
+   * press — suppress the false signal. */
   -webkit-tap-highlight-color: transparent;
 }
 
 :where([data-draggavue], [data-draggavue-index])[data-dragging="true"] {
+  /* The hand closes. Pairing grab/grabbing is the pointer-side
+   * counterpart of the lift — state made legible at the cursor. */
   cursor: grabbing;
 }
 
 :where([data-draggavue], [data-draggavue-index]):focus-visible {
+  /* Keyboard reach. The ring borrows the *user's* OS accent color:
+   * a library must not introduce a brand color of its own, and the
+   * system accent is the one hue every user already reads as
+   * "this is where my input goes".
+   *
+   * 2px: visible at every zoom level without becoming a border.
+   * 3px offset: the ring floats free of the element's own edge, so
+   * it reads as attention *around* the paper, not a change to it. */
   outline: var(--dv-focus-ring-width, 2px) solid
     var(--dv-focus-ring-color, color-mix(in oklab, AccentColor 85%, transparent));
   outline-offset: var(--dv-focus-ring-offset, 3px);

@@ -20,68 +20,104 @@ const trackKey = (track: Track): number => track.id;
   <section>
     <h2>Sortable — <code>&lt;SortableList&gt;</code></h2>
     <p>
-      Reorder with a pointer, or focus a row and press <kbd>Space</kbd>, move with the arrow keys,
-      drop with <kbd>Space</kbd>. Changes are announced to screen readers.
+      Drag rows to reorder, or focus one and press <kbd>Space</kbd>, steer with the arrows, drop
+      with <kbd>Space</kbd>. Every move is announced to screen readers.
     </p>
     <SortableList
-      class="tracks"
+      class="setlist"
       :items="tracks"
       :item-key="trackKey"
       @update:items="(next) => (tracks = next)"
     >
-      <template #item="{ item, index, isDragging }">
-        <span class="grip" aria-hidden="true">⠿</span>
+      <template #item="{ item, index }">
+        <span class="grip" aria-hidden="true"></span>
         <span class="order">{{ index + 1 }}</span>
-        <span class="title">{{ item.title }}</span>
-        <span class="length">{{ isDragging ? "moving…" : item.length }}</span>
+        <span class="name">{{ item.title }}</span>
+        <span class="time">{{ item.length }}</span>
       </template>
     </SortableList>
   </section>
 </template>
 
 <style scoped>
-.tracks {
+section > h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 650;
+
+  & code {
+    color: var(--ink-2);
+    font:
+      500 14px ui-monospace,
+      monospace;
+  }
+}
+
+section > p {
+  margin: 0 0 16px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.setlist {
   display: grid;
-  gap: 0.5rem;
-  max-width: 28rem;
+
+  /* 6px between rows: siblings of one list sit close; the free
+   * cards elsewhere use 12px because they are separate things. */
+  gap: 6px;
+  max-width: 320px;
   margin: 0;
   padding: 0;
   list-style: none;
 
   & :deep(li) {
-    display: flex;
-    gap: 0.75rem;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 10px;
     align-items: center;
-    padding: 0.6rem 0.9rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-control);
-    background: var(--color-surface);
-    cursor: grab;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    font-size: 13px;
+    font-weight: 500;
+    transition: border-color 160ms var(--ease);
+
+    &:hover {
+      border-color: var(--line-hover);
+    }
 
     &[data-dragging="true"] {
-      cursor: grabbing;
-      border-color: var(--color-primary);
-      box-shadow: var(--shadow-lift);
+      border-color: color-mix(in oklab, var(--accent) 55%, var(--line));
     }
   }
 }
 
 .grip {
-  color: var(--color-text-muted);
+  width: 3px;
+  height: 14px;
+  border-inline: 2px dotted var(--ink-2);
+  opacity: 0.65;
 }
 
 .order {
-  min-width: 1.25rem;
-  color: var(--color-text-muted);
+  min-width: 14px;
+  color: var(--ink-2);
   font-variant-numeric: tabular-nums;
 }
 
-.title {
-  flex: 1;
+.time {
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
-.length {
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
+kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: var(--card);
+  font: inherit;
 }
 </style>
