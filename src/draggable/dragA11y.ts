@@ -50,21 +50,35 @@ export type DraggableAttrs = {
   readonly "data-dragging"?: "true";
 };
 
+/**
+ * What the a11y layer needs from its owning composable.
+ *
+ * The keyboard grammar only *decides*; every action flows back
+ * through this contract so state, constraints, and announcements
+ * stay in one place. `getState` must read reactive state — the
+ * attrs computed tracks it through this getter.
+ */
 export type DragA11yHost = {
+  /** Current session state; must be a reactive read. */
   readonly getState: () => DragState;
   readonly isDisabled: () => boolean;
   /** Snapshot constraints and grab at the current settled position. */
   readonly grab: () => void;
+  /** Nudge the live session by a pixel step (already sign-resolved). */
   readonly moveBy: (dx: number, dy: number) => void;
+  /** Commit the live session where it stands. */
   readonly drop: () => void;
+  /** Abort the live session and restore the origin. */
   readonly cancel: () => void;
 };
 
 export type DragA11y = {
+  /** ARIA affordances + styling hooks for the handle element. */
   readonly attrs: ComputedRef<DraggableAttrs>;
   /** Feed every applied transition through here for announcements. */
   readonly announceTransition: (transition: DragTransition) => void;
   readonly onKeydown: (event: KeyboardEvent) => void;
+  /** Cancels a keyboard grab when focus leaves the handle. */
   readonly onFocusout: () => void;
 };
 
